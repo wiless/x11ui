@@ -4,6 +4,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/go-gl/glfw/v3.1/glfw"
+
 	"github.com/BurntSushi/xgbutil/ewmh"
 
 	"github.com/wiless/x11widgets"
@@ -13,9 +15,16 @@ var child, child2, dlg *x11ui.Window
 var done chan bool
 var app *x11ui.Application
 
+func init() {
+	glfw.Init()
+}
+
 func SayHello() {
-	log.Print("I am Sendil")
+	log.Print("I am welcome")
+	// c := glfw.GetX11Display()
+
 	// ewmh.WmStateReq(app.AppWin().X(), dlg.Id, ewmh.StateToggle, "_NET_WM_STATE_FULLSCREEN")
+
 	// ewmh.ActiveWindowSet(app.AppWin().X(), dlg.Id) //_NET_ACTIVE_WINDOW
 	// ewmh.WmStateReq(app.AppWin().X(), dlg.Id, ewmh.StateToggle, "_NET_WM_STATE_MODAL")
 	// ewmh.WmStateReq(app.AppWin().X(), dlg.Id, ewmh.StateToggle, "_NET_WM_STATE_ABOVE")

@@ -318,6 +318,13 @@ func (s *Application) InvertBackGround() {
 func toUint32(colorful.Color) uint32 {
 	return 0
 }
+
+func (a *Application) SetDefaultKeys() {
+	a.RegisterKey("q", a.Close)
+	a.RegisterKey("i", a.InvertBackGround)
+	a.RegisterKey("f", a.FullScreen)
+}
+
 func (s *Application) newWindow(p xproto.Window, r Rect) *Window {
 	w := new(Window)
 	var parent xproto.Window
