@@ -8,7 +8,7 @@ import (
 
 	"github.com/BurntSushi/xgbutil/ewmh"
 
-	"github.com/wiless/x11widgets"
+	"github.com/wiless/x11ui"
 )
 
 var child, child2, dlg *x11ui.Window
