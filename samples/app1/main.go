@@ -4,8 +4,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/go-gl/glfw/v3.1/glfw"
-
 	"github.com/BurntSushi/xgbutil/ewmh"
 
 	"github.com/wiless/x11ui"
@@ -16,7 +14,7 @@ var done chan bool
 var app *x11ui.Application
 
 func init() {
-	glfw.Init()
+	// glfw.Init()
 }
 
 func SayHello() {
