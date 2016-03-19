@@ -46,6 +46,14 @@ type Application struct {
 	hspacing, vspacing int
 }
 
+func (a *Application) Width() int {
+	return int(a.xu.Screen().WidthInPixels)
+
+}
+func (a *Application) Height() int {
+	return int(a.xu.Screen().HeightInPixels)
+}
+
 func (a *Application) AutoLayout(l LayoutDirection, newpos ...int) {
 	a.l = l
 	if len(newpos) > 0 {

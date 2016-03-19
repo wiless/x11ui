@@ -56,6 +56,8 @@ func main() {
 	app.RegisterKey("shift-?", SayHello)
 	app.AppWin().OnClick(mainfn)
 
+	maxw, maxh := app.Width(), app.Height()
+
 	// dlg := s.NewFloatingWindow("File Open")
 	// dlg := newWindow(s.xu, nil, 0, 0, 400, 800)
 	// dlg.SetTitle("Dialog")
@@ -74,16 +76,15 @@ func main() {
 	app.AddToggleBtn("Pause", 200, 0).OnClickAdv(toggle)
 
 	app.AutoLayout(x11ui.LayoutVer, 10, 200)
-
-	app.AddButton("Pink 4", 300, 0).OnClick(extrafn1)
-	app.AddButton("graph", 400, 0).OnClick(plotgraph)
-	app.AddButton("Pink 4", 300, 0)
-	app.AddButton("graph", 400, 0)
-	app.AddButton("Pink 4", 300, 0)
-	app.AddButton("graph", 400, 0)
-	app.AutoLayout(x11ui.LayoutHor, 120, 200, 602, 400)
+	app.AddButton("Pink 4").OnClick(extrafn1)
+	app.AddButton("graph").OnClick(plotgraph)
+	app.AddButton("Pink 4")
+	app.AddButton("graph")
+	app.AddButton("Pink 4")
+	app.AddButton("graph")
+	app.AutoLayout(x11ui.LayoutHor, 120, 200, maxw/4, maxh/2)
 	child = app.NewChildWindow("View 1")
-	child2 = app.NewChildWindow("View 2", 100, 100, 400, 500)
+	child2 = app.NewChildWindow("View 2")
 
 	// obtn := NewButton("Orange ", dlg, 0, 400)
 	// obtn.SetBackGround(0xFF00FF)
