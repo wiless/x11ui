@@ -392,7 +392,7 @@ func (w *Window) Animate(t int) {
 	tt := time.NewTicker(10 * time.Millisecond)
 	ww := 10
 	hh := 10
-	for range tt.C {
+	for _ = range tt.C {
 		if ww > w.Rect.Width {
 			tt.Stop()
 			break
