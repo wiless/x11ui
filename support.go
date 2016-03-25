@@ -7,6 +7,18 @@ type Rect struct {
 	Width, Height int
 }
 
+func (r *Rect) MoveTo(x, y int) *Rect {
+	r.X = x
+	r.Y = y
+	return r
+}
+
+func (r *Rect) ShiftBy(dx, dy int) *Rect {
+	r.ShiftRight(dx)
+	r.ShiftDown(dy)
+	return r
+}
+
 func (r *Rect) ShiftRight(dx int) *Rect {
 	r.X += dx
 	return r

@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/llgcode/draw2d"
 
@@ -358,6 +359,53 @@ func (w *Window) finalize(g *xgraphics.Image, margin ...int) {
 func (w *Window) finishPaint(g *xgraphics.Image, margin ...int) {
 	w.update(g, margin...)
 	w.finalize(g, margin...)
+}
+
+type Property struct {
+	X, Y int
+	W, H int
+}
+
+func (p *Property) Step(dp Property) {
+
+}
+
+// return the distance from the src property
+func (p Property) Delta(src Property) (dp Property) {
+	dp.X = p.X - src.X
+	dp.Y = p.Y - src.Y
+	dp.W = p.W - src.W
+	dp.H = p.H - src.H
+
+	return dp
+}
+
+func (p *Property) Scale(steps int) {
+
+}
+
+func (w *Window) AnimateProperty(d time.Duration, start, stop Property) {
+
+}
+
+func (w *Window) Animate(t int) {
+	tt := time.NewTicker(10 * time.Millisecond)
+	ww := 10
+	hh := 10
+	for range tt.C {
+		if ww > w.Rect.Width {
+			tt.Stop()
+			break
+		} else {
+			// w.WMResize(ww, hh)
+			w.Resize(ww, hh)
+			ww += 10
+			hh += 10
+
+		}
+
+	}
+
 }
 
 func (w *Window) Draw(X *xgbutil.XUtil, e xevent.ExposeEvent) {
