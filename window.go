@@ -43,7 +43,7 @@ var (
 func init() {
 	fontReader, err := os.Open("FreeMonoBold.ttf")
 	if err != nil {
-		log.Printf("Unable to Load Font ", err)
+		log.Printf("INIT : Load X11 Font ", err)
 	}
 	draw2d.SetFontFolder(".")
 	// Now parse the font.
@@ -52,7 +52,26 @@ func init() {
 
 	// gc.SetFontData(draw2d.FontData{Name: "luxi", Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleBold | draw2d.FontStyleItalic})
 	if err != nil {
-		log.Printf("Unable to Load Font ", err)
+		log.Printf("INIT : Load Draw2D Font ", err)
+	}
+}
+
+func SetResourcePath(path string) {
+
+	draw2d.SetFontFolder(path)
+	fontReader, err := os.Open(path + "/./FreeMonoBold.ttf")
+	if err != nil {
+		log.Printf("Load Resource ", err)
+	}
+	// Now parse the font.
+	systemFont, err = xgraphics.ParseFont(fontReader)
+	dsFont = draw2d.GetFont(systemFData)
+
+	systemFData = draw2d.FontData{Name: "luxi", Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleBold | draw2d.FontStyleItalic}
+
+	// gc.SetFontData(draw2d.FontData{Name: "luxi", Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleBold | draw2d.FontStyleItalic})
+	if err != nil {
+		log.Printf("Load Font ", err)
 	}
 }
 
@@ -392,7 +411,7 @@ func (w *Window) Animate(t int) {
 	tt := time.NewTicker(10 * time.Millisecond)
 	ww := 10
 	hh := 10
-	for _ = range tt.C {
+	for range tt.C {
 		if ww > w.Rect.Width {
 			tt.Stop()
 			break

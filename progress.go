@@ -120,6 +120,10 @@ func (p *ProgressBar) drawBackground(s WidgetState) {
 	gc.SetFillColor(p.barColor)
 	draw2dkit.Rectangle(gc, margin, margin, ww, HH-1*margin)
 	gc.FillStroke()
+	gc.SetFillColor(color.RGBA{130, 120, 30, 110})
+	gc.SetStrokeColor(color.RGBA{30, 120, 130, 110})
+	draw2dkit.Circle(gc, 250, 10, 30)
+	gc.FillStroke()
 
 	// c := color.RGBA{200, 200, 200, 255}
 	// gc.SetStrokeColor(image.White)

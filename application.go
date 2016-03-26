@@ -46,6 +46,10 @@ type Application struct {
 	hspacing, vspacing int
 }
 
+func (a *Application) X() *xgbutil.XUtil {
+	return a.xu
+}
+
 func (a *Application) Width() int {
 	return int(a.xu.Screen().WidthInPixels)
 
@@ -72,7 +76,7 @@ func NewApplication(title string, width, height int, resizeable, fullApplication
 	s.KeyMaps = make(map[string]Handler)
 	s.title = title
 	s.Debug = true
-	s.defW, s.defH = 100, 50
+	s.defW, s.defH = width, height
 	var err error
 	s.xu, err = xgbutil.NewConn()
 	if err != nil {
@@ -210,7 +214,9 @@ func (s *Application) defaultWindow() {
 	}
 	sinfo := s.xu.Screen()
 	w, h := int(sinfo.WidthInPixels)/2, int(sinfo.HeightInPixels)/2
-	s.appWin.Create(s.xu.RootWin(), 0, 0, w, h, xproto.CwBackPixel, 0x0)
+	w, h = s.defW, s.defH
+
+	s.appWin.Create(s.xu.RootWin(), 0, 0, w, h, xproto.CwBackPixel, 0x101010)
 
 	// Listen for Key{Press,Release} events.
 	s.appWin.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonPress)

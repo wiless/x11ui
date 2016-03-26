@@ -1,13 +1,18 @@
 package x11ui
 
 import (
+	"image"
+	"image/color"
 	"log"
 
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil"
 	"github.com/BurntSushi/xgbutil/mousebind"
 	"github.com/BurntSushi/xgbutil/xevent"
+	"github.com/BurntSushi/xgbutil/xgraphics"
 	"github.com/BurntSushi/xgbutil/xwindow"
+	"github.com/llgcode/draw2d/draw2dimg"
+	"github.com/llgcode/draw2d/draw2dkit"
 )
 
 func NewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
@@ -27,7 +32,7 @@ func NewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 
 	// mask := xproto.GcForeground | xproto.GcGraphicsExposures
 	// values := []uint32{s.BlackPixel, 0}
-	win.Create(parent, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0xfffff)
+	win.Create(parent, r.X, r.Y, r.Width, r.Height, xproto.CwBackingPixel, 0xffffff)
 
 	// win.Create(parent, r.X, r.Y, r.Width, r.Height, mask, values...)
 	if err != nil {
@@ -35,10 +40,17 @@ func NewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	}
 	// win.MoveResize(r.X, r.Y, r.Width, r.Height)
 	if p == nil {
-		win.Change(xproto.CwBackPixel, 0x684426)
+		win.Change(xproto.CwBackPixel, 0xFF00FF, 0xFF0000)
 
 	} else {
-		// win.Change(xproto.CwBackPixel, 0xFFAA00)
+
+		// win.Change(xproto.CwBackPixel, 0x101010) // dark shade
+		// win.Change(xproto.CwBackPixel, 0x0000FF, 0xFF0000)
+		// win.Change(xproto.CwBorderPixel, 0xFF0000)
+
+		// win.Change(xproto.CwBackPixel, 0x00000)
+		log.Println("I am not nill")
+
 	}
 
 	//if p == nil {
@@ -79,4 +91,57 @@ func NewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 
 	// xevent.ButtonPressFun(w.mouseHandler).Connect(X, win.Id)
 	return w
+}
+
+func DrawDummy(w *Window, s WidgetState) {
+	r := w.Rect
+	r.MoveTo(0, 0)
+	r.ImageRect()
+	dest := image.NewRGBA(r.ImageRect())
+
+	gc := draw2dimg.NewGraphicContext(dest)
+
+	// bg := colorful.LinearRgb(.025, .025, .025)
+	switch s {
+	case StateNormal, StateReleased:
+		gc.SetFillColor(color.RGBA{0x20, 0x20, 0x20, 20})
+		gc.SetStrokeColor(systemFG)
+	case StateHovered:
+		gc.SetFillColor(color.RGBA{0x35, 0x20, 0x20, 20})
+		gc.SetStrokeColor(systemFG)
+	case StatePressed:
+		gc.SetFillColor(color.RGBA{0x20, 0x30, 0x20, 20})
+		gc.SetStrokeColor(systemFG)
+	case StateSpecial:
+		gc.SetFillColor(color.RGBA{0x20, 0x80, 0x20, 0x80})
+		gc.SetStrokeColor(systemFG)
+	}
+
+	// // gc.SetLineJoin(draw2d.RoundJoin)
+	// // gc.Rotate(math.Pi / 4.0)
+	WW := float64(r.Width)
+	HH := float64(r.Height)
+
+	// Draw Background
+	gc.SetLineWidth(0)
+	gc.SetFillColor(color.RGBA{130, 120, 30, 10})
+	gc.SetStrokeColor(color.RGBA{30, 120, 130, 10})
+	draw2dkit.Rectangle(gc, 0, 0, WW, HH)
+	gc.FillStroke()
+
+	gc.FillStroke()
+	gc.SetFillColor(color.RGBA{130, 120, 30, 10})
+	gc.SetStrokeColor(color.RGBA{30, 120, 130, 10})
+	draw2dkit.Circle(gc, 250, 10, 30)
+	gc.FillStroke()
+
+	gc.Close()
+	g := xgraphics.NewConvert(w.X(), dest)
+
+	// w.drawLabel(g, w.title)
+	g.XSurfaceSet(w.Id)
+	g.XDraw()
+	g.XPaintRects(w.Id, r.ImageRect())
+	// return g
+	// return g
 }
