@@ -4,6 +4,11 @@ import (
 	"image/color"
 	"log"
 
+	"github.com/BurntSushi/xgb/xproto"
+	"github.com/BurntSushi/xgbutil"
+
+	"github.com/BurntSushi/xgbutil/mousebind"
+
 	"github.com/wiless/x11ui"
 )
 
@@ -26,14 +31,35 @@ func NewSlider(title string, p *x11ui.Window, dims ...int) *Slider {
 	pbar.SetTextColor(color.Black)
 	// pbar.SetValue(0.5)
 
-	pbar.Widget().OnClickAdv(slider.OnClickFn)
+	pbar.Widget().OnClickAdv(slider.drawBar)
 
 	slider.ProgressBar = pbar
 	slider.SetValue(0)
 	slider.viewWidth = float64(slider.Widget().Rect.Width)
 	slider.SetMaxValue(100)
+	/// add event listeners
+	slider.AddListeners()
 
 	return slider
+}
+
+func (s *Slider) dragFunction(X *xgbutil.XUtil, rootX, rootY int, eventX, eventY int) {
+	// X.Ungrab()
+	log.Println(rootX, rootY, eventX, eventY)
+}
+
+func (s *Slider) AddListeners() {
+	w := s.ProgressBar.Widget().Window
+	mousebind.Drag(w.X, w.Id, w.Id, "1", false,
+		func(X *xgbutil.XUtil, rx, ry, ex, ey int) (bool, xproto.Cursor) {
+			s.drawBar(s.Widget(), ex, ey)
+			return true, 0
+		},
+		func(X *xgbutil.XUtil, rx, ry, ex, ey int) {
+			s.drawBar(s.Widget(), ex, ey)
+		},
+		func(X *xgbutil.XUtil, rx, ry, ex, ey int) {})
+
 }
 
 func (s *Slider) SetMaxValue(v float64) {
@@ -47,7 +73,9 @@ func (s *Slider) MouseDrag() {
 
 }
 
-func (s *Slider) OnClickFn(w *x11ui.Window, x, y int) {
+func (s *Slider) drawBar(w *x11ui.Window, x, y int) {
 	v := float64(x) * s.scaler
+	//mousebind.GrabPointer(xu, win, confine, cursor)
 	s.SetValue(v)
+
 }

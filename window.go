@@ -603,3 +603,11 @@ func (w *Window) PaintOnce() {
 	g := w.drawBackground(StateNormal)
 	w.finishPaint(g)
 }
+
+func (w *Window) XWin() *xwindow.Window {
+	return w.Window
+}
+
+func (w *Window) XProtoWin() xproto.Window {
+	return w.Window.Id
+}

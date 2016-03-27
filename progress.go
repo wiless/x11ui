@@ -8,6 +8,7 @@ import (
 
 	"github.com/llgcode/draw2d/draw2dkit"
 
+	"github.com/BurntSushi/xgbutil"
 	"github.com/BurntSushi/xgbutil/xgraphics"
 	"github.com/llgcode/draw2d/draw2dimg"
 	"github.com/lucasb-eyer/go-colorful"
@@ -36,6 +37,10 @@ func NewProgressBar(title string, p *Window, dims ...int) *ProgressBar {
 	pbar.loadTheme()
 	// pbar.SetValue(0.5)
 	return pbar
+}
+
+func (p *ProgressBar) X() *xgbutil.XUtil {
+	return p.me.X()
 }
 
 func (p *ProgressBar) loadTheme() {
@@ -74,6 +79,10 @@ func (p *ProgressBar) SetValue(v float64) {
 	p.val = v
 	p.reDrawBar()
 
+}
+
+func (p *ProgressBar) Parent() *Window {
+	return p.p
 }
 
 func (p *ProgressBar) Widget() *Window {
