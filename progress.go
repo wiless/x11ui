@@ -21,9 +21,12 @@ type ProgressBar struct {
 	// Custom properties
 	dispScaler float64
 	val        float64
+	bgColor    color.Color
 	barColor   color.Color
 	txtColor   color.Color
 	fmtString  string
+	margin     float64
+	border     float64
 }
 
 func NewProgressBar(title string, p *Window, dims ...int) *ProgressBar {
@@ -44,10 +47,14 @@ func (p *ProgressBar) X() *xgbutil.XUtil {
 }
 
 func (p *ProgressBar) loadTheme() {
+	p.bgColor = systemBG
 	p.barColor = colorful.LinearRgb(.4, .6, .1)
 	p.txtColor = color.RGBA{20, 200, 30, 200}
 }
 
+func (p *ProgressBar) SetBackGroundColor(bc color.Color) {
+	p.bgColor = bc
+}
 func (p *ProgressBar) SetBarColor(bc color.Color) {
 	p.barColor = bc
 }
@@ -94,6 +101,14 @@ func (p *ProgressBar) reDrawBar() {
 
 }
 
+func (p *ProgressBar) SetBorderWidth(bw float64) {
+	p.border = bw
+}
+
+func (p *ProgressBar) SetMargin(m float64) {
+	p.margin = m
+}
+
 func (p *ProgressBar) drawBackground(s WidgetState) {
 	r := p.me.Rect
 	r.MoveTo(0, 0)
@@ -124,28 +139,41 @@ func (p *ProgressBar) drawBackground(s WidgetState) {
 	HH := float64(r.Height)
 
 	// Draw Background
-	gc.SetLineWidth(0)
+	gc.SetLineWidth(p.border)
+	gc.SetFillColor(p.bgColor)
 	draw2dkit.Rectangle(gc, 0, 0, WW, HH)
 	gc.FillStroke()
 
-	// Draw the BAR
-	ww := float64(r.Width) * p.val
-	margin := 2.0
-	ww = ww - margin
-	gc.SetLineWidth(0)
-	gc.SetFillColor(p.barColor)
-	draw2dkit.Rectangle(gc, margin, margin, ww, HH-1*margin)
-	gc.FillStroke()
-	gc.SetFillColor(color.RGBA{130, 120, 30, 110})
-	gc.SetStrokeColor(color.RGBA{30, 120, 130, 110})
-	draw2dkit.Circle(gc, 250, 10, 30)
-	gc.FillStroke()
+	if p.val > 0 {
+		// Draw the BAR
+		NSegments := 1.0
+		ww := float64(r.Width) * p.val
+		margin := p.margin
+		ww = ww - margin
+		hh := HH - margin
+
+		gc.SetLineWidth(0)
+		sw := (ww - (NSegments-1)*margin) / NSegments
+		offset := margin
+		gc.SetFillColor(p.barColor)
+		// for i := 0.0; i < NSegments; i++ {
+		draw2dkit.Rectangle(gc, offset, margin, sw, hh)
+		gc.FillStroke()
+
+		// }
+	}
+
+	// gc.SetFillColor(color.RGBA{130, 120, 30, 110})
+	// gc.SetStrokeColor(color.RGBA{30, 120, 130, 110})
+	// draw2dkit.Circle(gc, 250, 10, 30)
+	// gc.FillStroke()
 
 	// c := color.RGBA{200, 200, 200, 255}
 	// gc.SetStrokeColor(image.White)
 	// c := color.RGBA{200, 200, 200, 255}
+
 	gc.SetFillColor(p.txtColor)
-	gc.SetLineWidth(1)
+	gc.SetLineWidth(0)
 	cx, cy := r.Center()
 	str := fmt.Sprintf(p.fmtString, (p.val * p.dispScaler))
 	x0, y0, w0, h0 := gc.GetStringBounds(str)

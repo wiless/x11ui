@@ -3,15 +3,22 @@ package main
 
 import (
 	"fmt"
+	"image/color"
 
 	"github.com/wiless/x11ui"
 )
 
 func main() {
 	fmt.Printf("Hello")
+	x11ui.SetResourcePath("../../fonts/")
 	app := x11ui.NewApplication("Hello World", 800, 600, false, false)
 	s := NewSlider("Simulation", app.AppWin(), 10, 10, 620, 50)
-	s.SetMaxValue(60)
+	s.SetMaxValue(100)
+	s.SetStepSize(5)
+	s.SetFmtString("%2.0f mins")
+	s.SetBackGroundColor(color.RGBA{0x10, 0x30, 0x10, 0xff})
+	s.SetBarColor(color.RGBA{0x10, 0x40, 0x10, 0x10})
+	s.SetTextColor(color.White)
 
 	// x11ui.DrawDummy(w, x11ui.StateNormal)
 	// r := color.RGBA{125, 0, 0, 250}
