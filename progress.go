@@ -18,11 +18,11 @@ type ProgressBar struct {
 	me *Window
 
 	// Custom properties
-	scale     float64
-	val       float64
-	barColor  color.Color
-	txtColor  color.Color
-	fmtString string
+	dispScaler float64
+	val        float64
+	barColor   color.Color
+	txtColor   color.Color
+	fmtString  string
 }
 
 func NewProgressBar(title string, p *Window, dims ...int) *ProgressBar {
@@ -31,7 +31,7 @@ func NewProgressBar(title string, p *Window, dims ...int) *ProgressBar {
 	}
 	pbar := new(ProgressBar)
 	pbar.me = NewWidget(p.Window.X, p, title, dims...)
-
+	pbar.SetDisplayScale(100.0)
 	pbar.ResetFmtString()
 	pbar.loadTheme()
 	// pbar.SetValue(0.5)
@@ -65,6 +65,10 @@ func (p ProgressBar) Value() float64 {
 	return p.val
 }
 
+func (p *ProgressBar) SetDisplayScale(s float64) {
+	p.dispScaler = s
+}
+
 // Sets the value in the fraction 0 to 1
 func (p *ProgressBar) SetValue(v float64) {
 	p.val = v
@@ -72,6 +76,9 @@ func (p *ProgressBar) SetValue(v float64) {
 
 }
 
+func (p *ProgressBar) Widget() *Window {
+	return p.me
+}
 func (p *ProgressBar) reDrawBar() {
 	/// ignoring widgetState
 	p.drawBackground(StateNormal)
@@ -131,7 +138,7 @@ func (p *ProgressBar) drawBackground(s WidgetState) {
 	gc.SetFillColor(p.txtColor)
 	gc.SetLineWidth(1)
 	cx, cy := r.Center()
-	str := fmt.Sprintf(p.fmtString, (p.val * 100.0))
+	str := fmt.Sprintf(p.fmtString, (p.val * p.dispScaler))
 	x0, y0, w0, h0 := gc.GetStringBounds(str)
 	// log.Println("Required dimension for string ", x0, y0, w0, h0, cx, cy)
 	tx, ty := float64(cx)-w0/2.0-x0, float64(cy)-h0/2.0-y0/2.0

@@ -66,6 +66,7 @@ func NewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	} else {
 		mousebind.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "1", false, true)
 		mousebind.ButtonReleaseFun(w.mouseReleaseHandler).Connect(X, win.Id, "1", false, true)
+
 		xevent.EnterNotifyFun(w.onHoverEvent).Connect(X, win.Id)
 		xevent.LeaveNotifyFun(w.onLeaveEvent).Connect(X, win.Id)
 		mousebind.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "2", false, true)
