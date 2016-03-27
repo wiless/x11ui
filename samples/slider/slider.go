@@ -36,15 +36,40 @@ func NewSlider(title string, p *x11ui.Window, dims ...int) *Slider {
 	pbar.Widget().OnClickAdv(slider.drawBar)
 
 	slider.ProgressBar = pbar
-	slider.SetValue(0)
-	slider.viewWidth = float64(slider.Widget().Rect.Width)
+	slider.viewWidth = float64(slider.Widget().Rect.Width) - 2*slider.ProgressBar.Margin()
+	// slider.SetFmtString("%5.2f")
+
 	slider.SetMaxValue(100)
 	slider.SetStepSize(10)
+	slider.SetValue(0)
 
 	/// add event listeners
 	slider.AddListeners()
 
 	return slider
+}
+
+func TrimValues(v float64) float64 {
+	switch {
+	case v < 0:
+		return 0
+	case v > 1:
+		return 1
+	default:
+		return v
+	}
+}
+
+func (s *Slider) Value() float64 {
+
+	return s.ProgressBar.Value() * s.maxValue
+
+}
+
+func (s *Slider) SetValue(v float64) {
+	vv := TrimValues(v / s.maxValue)
+
+	s.ProgressBar.SetValue(vv)
 }
 
 func (s *Slider) SetStepSize(v float64) {
@@ -68,7 +93,6 @@ func (s *Slider) AddListeners() {
 func (s *Slider) SetMaxValue(v float64) {
 	s.maxValue = v
 	s.scaler = 1.0 / s.viewWidth
-	s.ProgressBar.SetFmtString("%5.2f")
 	s.ProgressBar.SetDisplayScale(v)
 }
 
@@ -78,15 +102,9 @@ func (s *Slider) drawBar(w *x11ui.Window, x, y int) {
 		pixelunitStep := s.viewWidth / (s.maxValue / s.stepSize)
 		snappedX := math.Ceil(float64(x) / pixelunitStep)
 		v = snappedX * pixelunitStep / s.viewWidth
-		if v < 0 {
-			v = 0
-		}
-		if v > 1 {
-			v = 1
-		}
-
+		v = TrimValues(v)
 	}
 	//mousebind.GrabPointer(xu, win, confine, cursor)
-	s.SetValue(v)
+	s.ProgressBar.SetValue(v)
 
 }

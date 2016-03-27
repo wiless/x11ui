@@ -105,6 +105,9 @@ func (p *ProgressBar) SetBorderWidth(bw float64) {
 	p.border = bw
 }
 
+func (p *ProgressBar) Margin() float64 {
+	return p.margin
+}
 func (p *ProgressBar) SetMargin(m float64) {
 	p.margin = m
 }
@@ -154,11 +157,32 @@ func (p *ProgressBar) drawBackground(s WidgetState) {
 
 		gc.SetLineWidth(0)
 		sw := (ww - (NSegments-1)*margin) / NSegments
-		offset := margin
 		gc.SetFillColor(p.barColor)
 		// for i := 0.0; i < NSegments; i++ {
-		draw2dkit.Rectangle(gc, offset, margin, sw, hh)
+		draw2dkit.Rectangle(gc, margin, margin, sw, hh)
 		gc.FillStroke()
+
+		/// Draw Grid Lines
+		NGrids := 10.0
+		GridWidth := (WW - 2*margin) / NGrids
+		lc, ok := p.barColor.(color.RGBA)
+		if ok {
+			lc.A = 10
+			gc.SetStrokeColor(lc)
+		}
+		xpos := margin
+		gc.SetLineWidth(1)
+
+		for i := 0.0; i < NGrids; i++ {
+			if xpos < ww {
+				gc.MoveTo(xpos, 0)
+				gc.LineTo(xpos, hh)
+				xpos += GridWidth
+				gc.Close()
+				gc.Stroke()
+			}
+
+		}
 
 		// }
 	}
