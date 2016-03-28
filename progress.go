@@ -27,6 +27,8 @@ type ProgressBar struct {
 	fmtString  string
 	margin     float64
 	border     float64
+	ShowGrid   bool
+	NGrids     float64
 }
 
 func NewProgressBar(title string, p *Window, dims ...int) *ProgressBar {
@@ -163,25 +165,29 @@ func (p *ProgressBar) drawBackground(s WidgetState) {
 		gc.FillStroke()
 
 		/// Draw Grid Lines
-		NGrids := 10.0
-		GridWidth := (WW - 2*margin) / NGrids
-		lc, ok := p.barColor.(color.RGBA)
-		if ok {
-			lc.A = 10
-			gc.SetStrokeColor(lc)
-		}
-		xpos := margin
-		gc.SetLineWidth(1)
+		if p.ShowGrid && p.NGrids > 1 {
 
-		for i := 0.0; i < NGrids; i++ {
-			if xpos < ww {
-				gc.MoveTo(xpos, 0)
-				gc.LineTo(xpos, hh)
-				xpos += GridWidth
-				gc.Close()
-				gc.Stroke()
+			NGrids := p.NGrids
+
+			GridWidth := (WW - 2*margin) / NGrids
+			lc, ok := p.barColor.(color.RGBA)
+			if ok {
+				lc.A = 10
+				gc.SetStrokeColor(lc)
 			}
+			xpos := margin
+			gc.SetLineWidth(1)
 
+			for i := 0.0; i < NGrids; i++ {
+				if xpos < ww {
+					gc.MoveTo(xpos, margin)
+					gc.LineTo(xpos, hh)
+					xpos += GridWidth
+					gc.Close()
+					gc.Stroke()
+				}
+
+			}
 		}
 
 		// }

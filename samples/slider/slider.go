@@ -36,12 +36,14 @@ func NewSlider(title string, p *x11ui.Window, dims ...int) *Slider {
 	pbar.Widget().OnClickAdv(slider.drawBar)
 
 	slider.ProgressBar = pbar
+
 	slider.viewWidth = float64(slider.Widget().Rect.Width) - 2*slider.ProgressBar.Margin()
 	// slider.SetFmtString("%5.2f")
 
 	slider.SetMaxValue(100)
 	slider.SetStepSize(10)
 	slider.SetValue(0)
+	slider.ProgressBar.ShowGrid = true
 
 	/// add event listeners
 	slider.AddListeners()
@@ -74,6 +76,7 @@ func (s *Slider) SetValue(v float64) {
 
 func (s *Slider) SetStepSize(v float64) {
 	s.stepSize = v
+	s.ProgressBar.NGrids = s.maxValue / s.stepSize
 }
 
 func (s *Slider) AddListeners() {
@@ -93,6 +96,7 @@ func (s *Slider) AddListeners() {
 func (s *Slider) SetMaxValue(v float64) {
 	s.maxValue = v
 	s.scaler = 1.0 / s.viewWidth
+	s.ProgressBar.NGrids = s.maxValue / s.stepSize
 	s.ProgressBar.SetDisplayScale(v)
 }
 
