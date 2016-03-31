@@ -611,3 +611,51 @@ func (w *Window) XWin() *xwindow.Window {
 func (w *Window) XProtoWin() xproto.Window {
 	return w.Window.Id
 }
+
+func NewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
+	w := new(Window)
+	w.title = t
+	w.background = systemBG
+	var parent xproto.Window
+	if p == nil {
+		parent = X.RootWin()
+	} else {
+		parent = p.Id
+	}
+	mousebind.Initialize(X)
+	r := newRect(dims...)
+	win, err := xwindow.Generate(X)
+	if err != nil {
+		log.Fatal("NewWidget : Unable to Create ", err)
+	}
+
+	///Raw window creation & Manage handlers
+	win.Create(parent, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0x30)
+	win.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonRelease, xproto.EventMaskExposure, xproto.EventMaskEnterWindow, xproto.EventMaskLeaveWindow)
+	mousebind.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "1", false, true)
+	mousebind.ButtonReleaseFun(w.mouseReleaseHandler).Connect(X, win.Id, "1", false, true)
+	xevent.EnterNotifyFun(w.onHoverEvent).Connect(X, win.Id)
+	xevent.LeaveNotifyFun(w.onLeaveEvent).Connect(X, win.Id)
+	mousebind.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "2", false, true)
+
+	win.WMGracefulClose(
+		func(w *xwindow.Window) {
+			// Detach all event handlers.
+			// This should always be done when a window can no longer
+			// receive events.
+			log.Printf("Window destroyed %d ", w.Id)
+			xevent.Detach(w.X, w.Id)
+			mousebind.Detach(w.X, w.Id)
+			w.Destroy()
+			// Exit if there are no more windows left.
+
+		})
+
+	// It's important that the map comes after setting WMGracefulClose, since
+	// the WM isn't obliged to watch updates to the WM_PROTOCOLS property.
+	win.Map()
+
+	w.Rect = r
+	// xevent.ButtonPressFun(w.mouseHandler).Connect(X, win.Id)
+	return w
+}

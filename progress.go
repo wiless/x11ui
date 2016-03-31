@@ -36,7 +36,7 @@ func NewProgressBar(title string, p *Window, dims ...int) *ProgressBar {
 		log.Fatal("Cannot Create Widget without Application")
 	}
 	pbar := new(ProgressBar)
-	pbar.me = NewWidget(p.Window.X, p, title, dims...)
+	pbar.me = newWindow(p.Window.X, p, title, dims...)
 	pbar.SetDisplayScale(100.0)
 	pbar.ResetFmtString()
 	pbar.loadTheme()
