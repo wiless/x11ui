@@ -26,7 +26,7 @@ func NewImgButton(title string, p *Window, dims ...int) *ImgButton {
 	}
 	tbox := new(ImgButton)
 	tbox.Widget = WidgetFactory(p, dims...)
-	tbox.fname = "/home/ssk/hg.png"
+	tbox.fname = "hg.png"
 	tbox.init()
 
 	// tbox.Create(p, dims...)
@@ -72,17 +72,16 @@ func (t *ImgButton) addPicture() {
 	log.Print(inset, irect)
 
 	// si := t.canvas.SubImage(inset).(*xgraphics.Image)
-	// xg := xgraphics.NewConvert(t.xu, si)
+	// xg := xgraphics.NewConvert(t.xu, )
 	// xg.XDraw()
 	// xg.XPaintRects(t.xwin.Id, inset)
-	t.gc.DrawImage(simg)
 
-	// si := t.canvas.SubImage(inset).(*xgraphics.Image)
-	// xgraphics.Blend(si, simg, image.Point{40, 40})
+	si := t.canvas.SubImage(inset).(*xgraphics.Image)
+	xgraphics.Blend(si, simg, image.Point{0, 0})
 	// si.CreatePixmap()
 	// si.XDraw()
 	// si.XPaint(t.xwin.Id)
-
+	t.canvas.XSurfaceSet(t.xwin.Id)
 	t.updateCanvas()
 }
 

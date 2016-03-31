@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/xgbutil"
 	"github.com/BurntSushi/xgbutil/keybind"
@@ -36,6 +37,33 @@ func NewTextBox(title string, p *Window, dims ...int) *TextBox {
 	// tbox.loadTheme()
 	// pbar.SetValue(0.5)
 	return tbox
+}
+
+func (t *TextBox) ShowIBeam() {
+	// for {
+	// for x := t.cursor; x < t.cursor+10; x++ {
+	var toggle bool
+	c := time.Tick(500 * time.Millisecond)
+	for range c {
+		for y := t.line; y < t.line+t.linespace; y++ {
+			if toggle {
+				t.canvas.SetBGRA(t.cursor, y, toBGRA(t.bgColor))
+			} else {
+				t.canvas.SetBGRA(t.cursor, y, toBGRA(color.RGBA{250, 0, 0, 255}))
+			}
+		}
+		err := t.canvas.XDrawChecked()
+		if err == nil {
+			t.canvas.XDraw()
+			t.canvas.XPaint(t.xwin.Id)
+		}
+
+		toggle = !toggle
+	}
+
+	// }
+	// }
+
 }
 
 func (t *TextBox) registerHandlers() {
@@ -85,17 +113,26 @@ func (t *TextBox) AddRulers() {
 	t.gc.SetLineDash([]float64{}, 0)
 }
 func (t *TextBox) handleKeyboard(str string) {
-	if str == "Return" {
+	if str == "Return" || str=="KP_Enter"{
 		t.line += t.linespace
 		t.cursor = 0
 		return
 
 	}
 
+	if str == "BackSpace" {
+		t.cursor -= 14
+		nx, _, _ := t.canvas.Text(int(t.cursor), int(t.line), t.txtColor, 12, systemFont, " ")
+
+		t.cursor = nx
+		t.updateCanvas()
+		return
+	}
 	if len(str) != 1 {
 		log.Println("I am returning")
 		return
 	}
+
 	// if str == " " {
 	// 	// t.cursor += t.charSpace // should be set to char space
 	// 	return
@@ -115,7 +152,6 @@ func (t *TextBox) handleKeyboard(str string) {
 		t.line += t.linespace // line spacing
 		t.cursor = 0
 	}
-	t.gc.Close()
 
 	t.updateCanvas()
 
@@ -142,20 +178,18 @@ func (t *TextBox) drawBackground() {
 }
 
 func (t *TextBox) init() {
-	t.drawBackground()
-
-	cw, ch := xgraphics.Extents(systemFont, 12, "W")
-	log.Println("extends ", cw, ch)
-	cw, ch = xgraphics.TextMaxExtents(systemFont, 12, "W")
+	// t.drawBackground()
+	// cw, ch := xgraphics.Extents(systemFont, 12, "W")
+	// log.Println("extends ", cw, ch)
+	cw, ch := xgraphics.TextMaxExtents(systemFont, 12, "W")
 	log.Println("extends ", cw, ch)
 	t.linespace = ch
 	t.charSpace = cw
 
 	t.drawTextBox(StateNormal)
-
-	t.AddRulers()
-
+	// t.AddRulers()
 	t.updateCanvas()
+	// go t.ShowIBeam()
 	t.registerHandlers()
 
 }
@@ -166,7 +200,7 @@ func (t *TextBox) drawTextBox(s WidgetState) {
 	// r.ImageRect()
 	W, H := float64(t.Width()), float64(t.Height())
 	gc := t.Context()
-	gc.SetFillColor(color.Black)
+	gc.SetFillColor(t.bgColor)
 	gc.SetStrokeColor(t.lineColor)
 	draw2dkit.Rectangle(gc, 0, 0, W, H)
 	gc.FillStroke()

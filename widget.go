@@ -96,8 +96,8 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 	err = ewmh.WmNameSet(w.xu, win.Id, w.title)
 	deBug("Could not set _NET_WM_NAME ", err)
 
-	err = ewmh.WmWindowOpacitySet(w.xu, win.Id, .3)
-	deBug("Could not set OPACITY ", err)
+	// err = ewmh.WmWindowOpacitySet(w.xu, win.Id, .3)
+	// deBug("Could not set OPACITY ", err)
 
 	// Paint our image before mapping.
 
@@ -137,18 +137,18 @@ func (w *Widget) setupCanvas() {
 	w.rawimg = image.NewRGBA(r.ImageRect())
 	w.gc = draw2dimg.NewGraphicContext(w.rawimg)
 
-	// each := func(x, y int) xgraphics.BGRA {
-	// 	// log.Println(x, y, LightGray)
-	// 	return xgraphics.BGRA{20, 20, 20, 255}
-	// }
-	// w.canvas.For(each)
-
 	// w.gc.SetLineWidth(2)
 	// w.gc.SetStrokeColor(w.lineColor)
 	// draw2dkit.Rectangle(w.gc, 0, 0, float64(w.Width()), float64(w.Width()))
 	// w.gc.Stroke()
 
 	w.canvas = xgraphics.NewConvert(w.xu, w.rawimg) // (w.xu, r.ImageRect())
+	each := func(x, y int) xgraphics.BGRA {
+		// log.Println(x, y, LightGray)
+		return xgraphics.BGRA{0, 0, 0, 255}
+	}
+	w.canvas.For(each)
+
 	w.canvas.XSurfaceSet(w.xwin.Id)
 	w.canvas.XDraw()
 	w.canvas.XPaint(w.xwin.Id)
@@ -183,6 +183,7 @@ func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	if modStr != "" {
 		finalstr = fmt.Sprint(modStr, keyStr)
 	}
+	_ = finalstr
 	// log.Println("Event code is ", e.Detail)
 	// log.Printf("%s MAPS  to Keycode %v ", finalstr, keybind.StrToKeycodes(s.xu, finalstr))
 
@@ -192,7 +193,7 @@ func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	// 	}
 	// 	fn()
 	// }
-	log.Println("Widgeyt ", finalstr)
+	// log.Println("Widgeyt ", finalstr)
 
 }
 
@@ -209,7 +210,6 @@ func (w *Widget) AttachHandlers() *Widget {
 }
 
 func (w *Widget) onHoverEvent(X *xgbutil.XUtil, e xevent.EnterNotifyEvent) {
-	log.Println(w.title, " Enter ")
 	w.drawBorder(StateHovered)
 	// w.canvas := xgraphics.NewConvert(X, w.rawimg)
 	w.updateCanvas()
@@ -228,7 +228,7 @@ func (w *Widget) updateCanvas() {
 }
 
 func (w *Widget) onLeaveEvent(X *xgbutil.XUtil, e xevent.LeaveNotifyEvent) {
-	log.Println(w.title, " Left Hover")
+	// log.Println(w.title, " Left Hover")
 	w.drawBorder(StateNormal)
 	// w.canvas := xgraphics.NewConvert(X, w.rawimg)
 	// w.canvas.For(func(x, y int) xgraphics.BGRA {
@@ -262,8 +262,6 @@ func (w *Widget) drawBorder(state WidgetState) {
 	// outset.Max.Sub(image.Point{5, 5})
 	size := outset.Size()
 	inset := outset.Inset(2)
-	log.Println("check border : OUTSET ", outset)
-	log.Println("check border : INSET ", inset)
 	for x := 0; x < size.X; x++ {
 		for y := 0; y < size.Y; y++ {
 			xcond := (outset.Min.X >= x && inset.Min.X > x) || (inset.Max.X < x)
@@ -346,22 +344,20 @@ func (w *Widget) RePaint() {
 		}
 	}
 
-	// border image
-	outset := w.canvas.Rect
-	// outset.Max.Sub(image.Point{5, 5})
-	size = outset.Size()
-	inset := outset.Inset(2)
-	log.Println("check border : OUTSET ", outset)
-	log.Println("check border : INSET ", inset)
-	for x := 0; x < size.X; x++ {
-		for y := 0; y < size.Y; y++ {
-			xcond := (outset.Min.X >= x && inset.Min.X > x) || (inset.Max.X < x)
-			ycond := (outset.Min.Y >= y && inset.Min.Y > y) || (inset.Max.Y < y)
-			if xcond || ycond {
-				xg.SetBGRA(x, y, DarkGreen)
-			}
-		}
-	}
+	// // border image
+	// outset := w.canvas.Rect
+	// // outset.Max.Sub(image.Point{5, 5})
+	// size = outset.Size()
+	// inset := outset.Inset(2)
+	// for x := 0; x < size.X; x++ {
+	// 	for y := 0; y < size.Y; y++ {
+	// 		xcond := (outset.Min.X >= x && inset.Min.X > x) || (inset.Max.X < x)
+	// 		ycond := (outset.Min.Y >= y && inset.Min.Y > y) || (inset.Max.Y < y)
+	// 		if xcond || ycond {
+	// 			xg.SetBGRA(x, y, DarkGreen)
+	// 		}
+	// 	}
+	// }
 
 	xg.XDraw()
 	xg.XPaint(w.xwin.Id)
