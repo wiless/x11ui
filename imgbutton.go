@@ -66,14 +66,20 @@ func (t *ImgButton) addPicture() {
 
 	inset := irect.Inset(2)
 	log.Println(irect, inset)
-	// si := t.canvas.SubImage(inset).(*xgraphics.Image)
 
 	mx := min(inset.Dx(), inset.Dy())
 	simg := xgraphics.Scale(img, mx, mx)
 	log.Print(inset, irect)
 
+	// si := t.canvas.SubImage(inset).(*xgraphics.Image)
+	// xg := xgraphics.NewConvert(t.xu, si)
+	// xg.XDraw()
+	// xg.XPaintRects(t.xwin.Id, inset)
 	t.gc.DrawImage(simg)
-	// xgraphics.Blend(si, simg, image.Point{0, 0})
+
+	// si := t.canvas.SubImage(inset).(*xgraphics.Image)
+	// xgraphics.Blend(si, simg, image.Point{40, 40})
+	// si.CreatePixmap()
 	// si.XDraw()
 	// si.XPaint(t.xwin.Id)
 

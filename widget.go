@@ -10,7 +10,6 @@ import (
 	"github.com/BurntSushi/xgbutil/keybind"
 
 	"github.com/llgcode/draw2d/draw2dimg"
-	"github.com/llgcode/draw2d/draw2dkit"
 
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil"
@@ -53,6 +52,7 @@ type Widget struct {
 	margin    float64
 	border    float64
 	title     string
+	*Layout
 }
 
 func (w *Widget) SetX(X *xgbutil.XUtil) {
@@ -108,6 +108,7 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 	// the WM isn't obliged to watch updates to the WM_PROTOCOLS property.
 
 	w.init()
+	w.Layout = CreateLayout(0, 0, w.Width(), w.Height())
 
 	win.Map()
 	return w
@@ -127,7 +128,6 @@ func (w *Widget) LoadTheme(str string) {
 	w.bgColor = color.RGBA{0, 0, 0, 255}
 	w.fgColor = color.RGBA{120, 120, 120, 20}
 	w.lineColor = color.RGBA{20, 120, 20, 255}
-
 	w.txtColor = color.RGBA{255, 255, 0, 255}
 
 }
@@ -152,13 +152,6 @@ func (w *Widget) setupCanvas() {
 	w.canvas.XSurfaceSet(w.xwin.Id)
 	w.canvas.XDraw()
 	w.canvas.XPaint(w.xwin.Id)
-}
-
-func (w *Widget) createRegion() {
-	r := newRect(0, 0, w.Width(), w.Height())
-
-	w.canvas = xgraphics.New(w.xu, r.ImageRect())
-
 }
 
 func (w *Widget) handleClose() {
@@ -228,8 +221,8 @@ func (w *Widget) updateCanvas() {
 	// 	c := w.rawimg.At(x, y).(color.RGBA)
 	// 	return xgraphics.BGRA{c.B, c.G, c.R, c.A}
 	// })
-	w.canvas = xgraphics.NewConvert(w.xu, w.rawimg)
-	w.canvas.XSurfaceSet(w.xwin.Id)
+	// w.canvas = xgraphics.NewConvert(w.xu, w.rawimg)
+	// w.canvas.XSurfaceSet(w.xwin.Id)
 	w.canvas.XDraw()
 	w.canvas.XPaint(w.xwin.Id)
 }
@@ -257,33 +250,121 @@ func GetIRect(w, h int) image.Rectangle {
 var origin = image.Point{0, 0}
 
 func (w *Widget) drawBorder(state WidgetState) {
-
+	var clr xgraphics.BGRA
 	if state == StateNormal {
-		w.gc.SetStrokeColor(w.bgColor)
+		clr = toBGRA(w.bgColor)
 	} else {
-		w.gc.SetStrokeColor(w.lineColor)
+		clr = toBGRA(w.lineColor)
+	}
+	xg := w.canvas
+	// border image
+	outset := w.canvas.Rect
+	// outset.Max.Sub(image.Point{5, 5})
+	size := outset.Size()
+	inset := outset.Inset(2)
+	log.Println("check border : OUTSET ", outset)
+	log.Println("check border : INSET ", inset)
+	for x := 0; x < size.X; x++ {
+		for y := 0; y < size.Y; y++ {
+			xcond := (outset.Min.X >= x && inset.Min.X > x) || (inset.Max.X < x)
+			ycond := (outset.Min.Y >= y && inset.Min.Y > y) || (inset.Max.Y < y)
+			if xcond || ycond {
+				xg.SetBGRA(x, y, clr)
+			}
+		}
 	}
 
-	//
-	// r := GetIRect(w.Width(), w.Height())
-	// si := w.canvas.SubImage(r).(*xgraphics.Image)
+	w.canvas.XDraw()
+	w.canvas.XPaint(w.xwin.Id)
 
-	// Fresh OVERWRITE METHOD
-	w.gc.SetLineWidth(2)
-	draw2dkit.Rectangle(w.gc, 0, 0, float64(w.Width()), float64(w.Height()))
-	w.gc.Stroke()
+	// //
+	// // r := GetIRect(w.Width(), w.Height())
+	// // si := w.canvas.SubImage(r).(*xgraphics.Image)
 
-	// BLEND METHOD
-	// xgraphics.Blend(si, w.rawimg, origin)
-	// si.XDraw()
-	// si.XPaint(w.xwin.Id)
+	// // Fresh OVERWRITE METHOD
 	// w.gc.SetLineWidth(2)
-	// draw2dkit.Rectangle(w.gc, 0, 0, float64(w.Width()), float64(w.Width()))
-	// w.gc.Stroke()
+	// w.gc.SetFillColor(color.RGBA{0, 0, 0, 0})
+	// draw2dkit.Rectangle(w.gc, 0, 0, float64(w.Width()), float64(w.Height()))
+	// w.gc.FillStroke()
 
-	// w.gc.DrawImage(w.rawimg)
+}
+func toBGRA(t color.Color) xgraphics.BGRA {
+	c := t.(color.RGBA)
+	return xgraphics.BGRA{c.B, c.G, c.R, c.A}
+}
 
-	// si.XDraw()
-	// si.XPaint(t.xwin.Id)
+/// Layout based Region Painting
+
+func (w *Widget) RePaint() {
+	// w.xwin.Detach()
+
+	/// Get the MAIN View
+	// r := GetIRect(w.Width(), w.Height())
+	// xg := xgraphics.New(w.xu, r)
+	xg := w.canvas
+
+	// for i, reg := range w.Layout.regions {
+	// 	_ = i
+	// 	pmap := reg.PaintRegion()
+
+	// 	rloc := pmap.Bounds() //.Add(w.Layout.offsets[i])
+	// 	log.Println("Plot over this ", rloc, pmap.Bounds())
+	// 	//draw.Draw(w.canvas, rloc, pmap, origin, draw.Src)
+
+	// 	// draw2dimg.DrawImage(pmap, w.gc.SubImage(rloc).(*xgraphics.Image), w.gc.Current.Tr, draw.Over, draw2dimg.BilinearFilter)
+	// 	// w.gc.DrawImage(pmap)
+	// 	// simg := w.canvas.SubImage(rloc).(*xgraphics.Image)
+	// 	xgraphics.Blend(w.canvas, pmap, origin)
+	// }
+	// w.updateCanvas()
+
+	pixmap := w.Layout.regions[0].PaintRegion()
+	pixmap2 := w.Layout.regions[1].PaintRegion()
+
+	r0 := pixmap.Bounds()  //.Add(w.Layout.offsets[0])
+	r1 := pixmap2.Bounds() //.Add(w.Layout.offsets[1])
+
+	// xg1 := xg.SubImage(r0).(*xgraphics.Image)
+	// xgraphics.Blend(xg1, pixmap, origin)
+
+	// xg2 := xg.SubImage(r1).(*xgraphics.Image)
+	// xgraphics.Blend(xg2, pixmap2, origin)
+
+	size := r0.Size()
+	offset := w.Layout.offsets[0]
+	for x := 0; x < size.X; x++ {
+		for y := 0; y < size.Y; y++ {
+			xg.SetBGRA(x+offset.X, y+offset.Y, toBGRA(pixmap.At(x, y)))
+		}
+	}
+
+	size = r1.Size()
+	offset = w.Layout.offsets[1]
+	for x := 0; x < size.X; x++ {
+		for y := 0; y < size.Y; y++ {
+			xg.SetBGRA(x+offset.X, y+offset.Y, toBGRA(pixmap2.At(x, y)))
+		}
+	}
+
+	// border image
+	outset := w.canvas.Rect
+	// outset.Max.Sub(image.Point{5, 5})
+	size = outset.Size()
+	inset := outset.Inset(2)
+	log.Println("check border : OUTSET ", outset)
+	log.Println("check border : INSET ", inset)
+	for x := 0; x < size.X; x++ {
+		for y := 0; y < size.Y; y++ {
+			xcond := (outset.Min.X >= x && inset.Min.X > x) || (inset.Max.X < x)
+			ycond := (outset.Min.Y >= y && inset.Min.Y > y) || (inset.Max.Y < y)
+			if xcond || ycond {
+				xg.SetBGRA(x, y, DarkGreen)
+			}
+		}
+	}
+
+	xg.XDraw()
+	xg.XPaint(w.xwin.Id)
+	// xg.XPaint(w.xwin.Id) //Rects(w.xwin.Id, pixmap.Bounds())
 
 }

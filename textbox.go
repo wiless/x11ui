@@ -4,7 +4,6 @@ import (
 	"image"
 	"image/color"
 	"log"
-	"math"
 	"strings"
 
 	"github.com/BurntSushi/xgbutil"
@@ -18,12 +17,11 @@ type TextBox struct {
 	*Widget
 
 	// Custom properties
-	text         string
-	lastx, lasty float64
-	cursor       float64
-	line         float64
-	charSpace    float64
-	linespace    float64
+	text      string
+	cursor    int
+	line      int
+	charSpace int
+	linespace int
 }
 
 func NewTextBox(title string, p *Window, dims ...int) *TextBox {
@@ -74,14 +72,14 @@ func (t *TextBox) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 }
 
 func (t *TextBox) AddRulers() {
-
-	t.gc.SetStrokeColor(color.RGBA{30, 30, 100, 255})
+	t.gc.SetFillColor(color.RGBA{0, 0, 0, 0})
+	t.gc.SetStrokeColor(color.RGBA{30, 30, 100, 0})
 	width := float64(t.Width())
 	t.gc.SetLineDash([]float64{10, 5, 10, 5}, 0)
-	Nlines := float64(t.Height()) / t.linespace
-	for i := 0.0; i < Nlines; i++ {
-		t.gc.MoveTo(0, i*t.linespace)
-		t.gc.LineTo(width, i*t.linespace)
+	Nlines := t.Height() / t.linespace
+	for i := 0; i < Nlines; i++ {
+		t.gc.MoveTo(0, float64(i*t.linespace))
+		t.gc.LineTo(width, float64(i*t.linespace))
 		t.gc.Stroke()
 	}
 	t.gc.SetLineDash([]float64{}, 0)
@@ -98,17 +96,22 @@ func (t *TextBox) handleKeyboard(str string) {
 		log.Println("I am returning")
 		return
 	}
-	if str == " " {
-		t.cursor += 10 // should be set to char space
-		return
-	}
-	log.Println("Width", t.cursor)
-	_, _, w, _ := t.gc.GetStringBounds(str)
-	log.Println("Width", t.cursor, w)
-	t.gc.SetStrokeColor(t.txtColor)
-	t.gc.FillStringAt(str, t.cursor, t.line+t.linespace)
-	t.cursor += w
-	if t.cursor > (float64(t.Width()) - t.margin) {
+	// if str == " " {
+	// 	// t.cursor += t.charSpace // should be set to char space
+	// 	return
+	// }
+	// log.Println("Width", t.cursor)
+	// _, _, w, _ := t.gc.GetStringBounds(str)
+	// log.Println("Width", t.cursor, w)
+	// t.gc.SetStrokeColor(t.txtColor)
+	// t.gc.SetFillColor(color.Black)
+	// t.gc.FillStringAt(str, t.cursor, t.line+t.linespace)
+
+	nx, ny, _ := t.canvas.Text(int(t.cursor), int(t.line), t.txtColor, 12, systemFont, str)
+	log.Println("nx,ny", nx, ny)
+	t.cursor = nx
+
+	if t.cursor > (t.Width() - int(t.margin)) {
 		t.line += t.linespace // line spacing
 		t.cursor = 0
 	}
@@ -140,12 +143,13 @@ func (t *TextBox) drawBackground() {
 
 func (t *TextBox) init() {
 	t.drawBackground()
-	var x0, y0 float64
-	x0, y0, t.charSpace, t.linespace = t.gc.GetStringBounds("W")
 
-	log.Println("spacing ", t.charSpace, t.linespace, x0, y0)
-	t.linespace = math.Abs(y0) + t.linespace
-	t.linespace *= 2
+	cw, ch := xgraphics.Extents(systemFont, 12, "W")
+	log.Println("extends ", cw, ch)
+	cw, ch = xgraphics.TextMaxExtents(systemFont, 12, "W")
+	log.Println("extends ", cw, ch)
+	t.linespace = ch
+	t.charSpace = cw
 
 	t.drawTextBox(StateNormal)
 
@@ -162,11 +166,13 @@ func (t *TextBox) drawTextBox(s WidgetState) {
 	// r.ImageRect()
 	W, H := float64(t.Width()), float64(t.Height())
 	gc := t.Context()
-	gc.SetFillColor(t.fgColor)
+	gc.SetFillColor(color.Black)
 	gc.SetStrokeColor(t.lineColor)
 	draw2dkit.Rectangle(gc, 0, 0, W, H)
 	gc.FillStroke()
 	gc.Close()
+
+	t.canvas.XSurfaceSet(t.xwin.Id)
 
 	// t.updateCanvas()
 	// // bg := colorful.LinearRgb(.025, .025, .025)

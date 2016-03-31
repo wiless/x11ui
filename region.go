@@ -30,6 +30,7 @@ type RegionPainter interface {
 
 type Layout struct {
 	regions []RegionPainter
+	offsets []image.Point
 	ox, oy  int
 	w, h    int
 }
@@ -41,16 +42,37 @@ func NewLayout(w *Window, x0, y0 int) *Layout {
 
 	return l
 }
+func CreateLayout(x, y, w, h int) *Layout {
+	l := new(Layout)
 
-func (l *Layout) AddRegion(r RegionPainter) {
+	l.ox, l.oy, l.w, l.h = x, y, w, h
+	return l
+}
+
+func (l *Layout) Resize(x, y, w, h int) {
+	l.ox, l.oy, l.w, l.h = x, y, w, h
+}
+
+func (l *Layout) AddRegion(r RegionPainter) *Layout {
+	l.offsets = append(l.offsets, origin)
 	l.regions = append(l.regions, r)
+	return l
+}
+
+func (l *Layout) AddRegionAt(r RegionPainter, x, y int) *Layout {
+	pt := image.Point{x, y}
+	l.offsets = append(l.offsets, pt)
+	l.regions = append(l.regions, r)
+	return l
 }
 
 func (l *Layout) DrawOnWindow(w *Window) {
 	r := w.Rect
 
 	pixmap := l.regions[0].PaintRegion()
+	// r0:=
 	g := xgraphics.NewConvert(w.X(), pixmap)
+
 	g.XSurfaceSet(w.Id)
 	g.XDraw()
 	g.XPaintRects(w.Id, r.ImageRect())
