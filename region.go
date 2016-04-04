@@ -53,6 +53,9 @@ func (l *Layout) Resize(x, y, w, h int) {
 	l.ox, l.oy, l.w, l.h = x, y, w, h
 }
 
+func (l *Layout) Size() image.Point {
+	return image.Point{l.w, l.h}
+}
 func (l *Layout) AddRegion(r RegionPainter) *Layout {
 	l.offsets = append(l.offsets, origin)
 	l.regions = append(l.regions, r)
@@ -65,14 +68,18 @@ func (l *Layout) AddRegionAt(r RegionPainter, x, y int) *Layout {
 	l.regions = append(l.regions, r)
 	return l
 }
-
+func (l *Layout) ImageRect() image.Rectangle {
+	return image.Rectangle{origin, l.Size()}
+}
+func (l *Layout) Origin() image.Point {
+	return image.Point{l.ox, l.oy}
+}
 func (l *Layout) DrawOnWindow(w *Window) {
 	r := w.Rect
 
 	pixmap := l.regions[0].PaintRegion()
 	// r0:=
 	g := xgraphics.NewConvert(w.X(), pixmap)
-
 	g.XSurfaceSet(w.Id)
 	g.XDraw()
 	g.XPaintRects(w.Id, r.ImageRect())

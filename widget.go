@@ -35,14 +35,26 @@ var Green = color.RGBA{0, 255, 0, 255}
 var DarkGreen = xgraphics.BGRA{0, 150, 0, 255}
 var LightGreen = xgraphics.BGRA{0, 50, 0, 255}
 
+type HandlerFunctions struct {
+	ClkAdvFn    func(w *Widget, x, y int)
+	ClkFn       func()
+	HoverFn     func()
+	LeaveFn     func()
+	DragStartFn func(w *Widget, global, local image.Point) bool
+	DragFn      func(w *Widget, global, local image.Point) bool
+	DragEndFn   func(w *Widget, global, local image.Point) bool
+	EnableHover bool
+}
+
 type Widget struct {
 	xwin   *xwindow.Window
 	pwinID xproto.Window
 	xu     *xgbutil.XUtil
 	xrect.Rect
-	canvas *xgraphics.Image
-	gc     *draw2dimg.GraphicContext
-	rawimg *image.RGBA
+	canvas  *xgraphics.Image
+	bgimage *xgraphics.Image
+	gc      *draw2dimg.GraphicContext
+	rawimg  *image.RGBA
 	// Properties
 	bgColor   color.Color /// canvas background
 	fgColor   color.Color /// fill color
@@ -53,6 +65,9 @@ type Widget struct {
 	border    float64
 	title     string
 	*Layout
+
+	/// Handlers
+	HandlerFunctions
 }
 
 func (w *Widget) SetX(X *xgbutil.XUtil) {
@@ -106,7 +121,7 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 
 	// It's important that the map comes after setting WMGracefulClose, since
 	// the WM isn't obliged to watch updates to the WM_PROTOCOLS property.
-
+	// w.HandlerFunctions = new
 	w.init()
 	w.Layout = CreateLayout(0, 0, w.Width(), w.Height())
 
@@ -115,6 +130,7 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 }
 
 func (w *Widget) init() {
+	w.EnableHover = true
 	w.LoadTheme("")
 	w.handleClose()
 
@@ -148,6 +164,7 @@ func (w *Widget) setupCanvas() {
 		return xgraphics.BGRA{0, 0, 0, 255}
 	}
 	w.canvas.For(each)
+	w.bgimage = xgraphics.NewConvert(w.xu, w.rawimg)
 
 	w.canvas.XSurfaceSet(w.xwin.Id)
 	w.canvas.XDraw()
@@ -197,6 +214,15 @@ func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 
 }
 
+func (w *Widget) mouseClick(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
+	if w.HandlerFunctions.ClkFn == nil {
+		log.Println("Mouse clicked at ", e.EventX, e.EventY)
+	} else {
+		w.ClkFn()
+	}
+
+}
+
 func (w *Widget) AttachHandlers() *Widget {
 	// Attach Handlers
 	// mousebind.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "1", false, true)
@@ -205,15 +231,8 @@ func (w *Widget) AttachHandlers() *Widget {
 	xevent.EnterNotifyFun(w.onHoverEvent).Connect(w.xu, w.xwin.Id)
 	xevent.LeaveNotifyFun(w.onLeaveEvent).Connect(w.xu, w.xwin.Id)
 
-	// mousebind.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "2", false, true)
+	mousebind.ButtonPressFun(w.mouseClick).Connect(w.xu, w.xwin.Id, "1", false, true)
 	return w
-}
-
-func (w *Widget) onHoverEvent(X *xgbutil.XUtil, e xevent.EnterNotifyEvent) {
-	w.drawBorder(StateHovered)
-	// w.canvas := xgraphics.NewConvert(X, w.rawimg)
-	w.updateCanvas()
-
 }
 
 func (w *Widget) updateCanvas() {
@@ -227,7 +246,39 @@ func (w *Widget) updateCanvas() {
 	w.canvas.XPaint(w.xwin.Id)
 }
 
+func (w *Widget) onHoverEvent(X *xgbutil.XUtil, e xevent.EnterNotifyEvent) {
+	if w.EnableHover {
+		if w.HoverFn == nil {
+			w.drawBorder(StateHovered)
+			// w.canvas := xgraphics.NewConvert(X, w.rawimg)
+			w.updateCanvas()
+		} else {
+			// w.drawBorder(StateHovered)
+			// // w.canvas := xgraphics.NewConvert(X, w.rawimg)
+			// w.updateCanvas()
+			// // calling the set hover vunf
+			w.HoverFn()
+		}
+	}
+
+}
+
 func (w *Widget) onLeaveEvent(X *xgbutil.XUtil, e xevent.LeaveNotifyEvent) {
+
+	if w.EnableHover {
+		if w.HoverFn == nil {
+			w.drawBorder(StateNormal)
+			// w.canvas := xgraphics.NewConvert(X, w.rawimg)
+			w.updateCanvas()
+		} else {
+			// w.drawBorder(StateHovered)
+			// // w.canvas := xgraphics.NewConvert(X, w.rawimg)
+			// w.updateCanvas()
+			// // calling the set hover vunf
+			w.LeaveFn()
+		}
+	}
+
 	// log.Println(w.title, " Left Hover")
 	w.drawBorder(StateNormal)
 	// w.canvas := xgraphics.NewConvert(X, w.rawimg)
@@ -299,6 +350,9 @@ func (w *Widget) RePaint() {
 	/// Get the MAIN View
 	// r := GetIRect(w.Width(), w.Height())
 	// xg := xgraphics.New(w.xu, r)
+	ir := GetIRect(w.Layout.w, w.Layout.h)
+	ir.Min = image.Point{w.Layout.ox, w.Layout.oy}
+	log.Println("subimage region is ")
 	xg := w.canvas
 
 	// for i, reg := range w.Layout.regions {
@@ -332,7 +386,7 @@ func (w *Widget) RePaint() {
 	offset := w.Layout.offsets[0]
 	for x := 0; x < size.X; x++ {
 		for y := 0; y < size.Y; y++ {
-			xg.SetBGRA(x+offset.X, y+offset.Y, toBGRA(pixmap.At(x, y)))
+			xg.SetBGRA(x+offset.X+w.Layout.ox, y+offset.Y+w.Layout.oy, toBGRA(pixmap.At(x, y)))
 		}
 	}
 
@@ -340,7 +394,7 @@ func (w *Widget) RePaint() {
 	offset = w.Layout.offsets[1]
 	for x := 0; x < size.X; x++ {
 		for y := 0; y < size.Y; y++ {
-			xg.SetBGRA(x+offset.X, y+offset.Y, toBGRA(pixmap2.At(x, y)))
+			xg.SetBGRA(x+offset.X+w.Layout.ox, y+offset.Y+w.Layout.oy, toBGRA(pixmap2.At(x, y)))
 		}
 	}
 
@@ -359,8 +413,10 @@ func (w *Widget) RePaint() {
 	// 	}
 	// }
 
-	xg.XDraw()
-	xg.XPaint(w.xwin.Id)
+	// xg.XDraw()
+	// xg.XPaint(w.xwin.Id)
+	w.canvas.XDraw()
+	w.canvas.XPaint(w.xwin.Id)
 	// xg.XPaint(w.xwin.Id) //Rects(w.xwin.Id, pixmap.Bounds())
 
 }
