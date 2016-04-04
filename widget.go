@@ -263,10 +263,19 @@ func (w *Widget) onHoverEvent(X *xgbutil.XUtil, e xevent.EnterNotifyEvent) {
 
 }
 
+func (w *Widget) drawBackground() {
+	// irect := w.canvas.Rect
+	each := func(x, y int) xgraphics.BGRA {
+		return toBGRA(w.bgColor)
+	}
+	w.canvas.For(each)
+
+}
+
 func (w *Widget) onLeaveEvent(X *xgbutil.XUtil, e xevent.LeaveNotifyEvent) {
 
 	if w.EnableHover {
-		if w.HoverFn == nil {
+		if w.LeaveFn == nil {
 			w.drawBorder(StateNormal)
 			// w.canvas := xgraphics.NewConvert(X, w.rawimg)
 			w.updateCanvas()
