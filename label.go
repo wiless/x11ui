@@ -20,6 +20,7 @@ type Label struct {
 	title      string
 	autoresize bool
 	align      AlignMode
+	fsize      float64
 }
 
 func NewLabel(title string, p *Window, dims ...int) *Label {
@@ -44,10 +45,14 @@ func (l *Label) SetAlignMode(align AlignMode) {
 	l.align = align
 }
 
-func (l *Label) init() {
-	cw, ch := xgraphics.TextMaxExtents(systemFont, 12, l.title)
-	log.Println("extends ", cw, ch)
+func (l *Label) SetFontSize(size float64) {
+	l.fsize = size
+}
 
+func (l *Label) init() {
+	// xgraphics.TextMaxExtents(systemFont, 12, l.title)
+	// log.Println("extends ", cw, ch)
+	l.SetFontSize(12)
 	// t.AddRulers()
 	l.updateCanvas()
 	// go t.ShowIBeam()
@@ -58,7 +63,7 @@ func (l *Label) init() {
 func (l *Label) SetLabel(lbl string) {
 	l.title = lbl
 	if l.autoresize {
-		w, h := xgraphics.Extents(systemFont, 12, l.title)
+		w, h := xgraphics.Extents(systemFont, l.fsize, l.title)
 		l.Widget.xwin.Resize(w, h)
 	}
 	l.updateLabel(StateNormal)
@@ -78,11 +83,11 @@ func (t *Label) updateLabel(state WidgetState) {
 	t.drawBackground()
 	var xpos, ypos int
 	if t.align == AlignHVCenter {
-		tw, th := xgraphics.Extents(systemFont, 12, t.title)
+		tw, th := xgraphics.Extents(systemFont, t.fsize, t.title)
 		xpos, ypos = t.Width()-tw, t.Height()-th
 		xpos, ypos = xpos/2, ypos/2
 	}
-	t.canvas.Text(xpos, ypos, t.txtColor, 12, systemFont, t.title)
+	t.canvas.Text(xpos, ypos, t.txtColor, t.fsize, systemFont, t.title)
 
 	// t.canvas.XSurfaceSet(t.xwin.Id)
 	t.updateCanvas()

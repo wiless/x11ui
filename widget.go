@@ -78,6 +78,10 @@ func (w *Widget) Context() *draw2dimg.GraphicContext {
 	return w.gc
 }
 
+func (w *Widget) SetBackground(c color.Color) {
+	w.bgColor = c
+}
+
 func WidgetFactory(p *Window, dims ...int) *Widget {
 	var w *Widget
 	var err error
