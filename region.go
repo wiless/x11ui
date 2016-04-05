@@ -84,3 +84,9 @@ func (l *Layout) DrawOnWindow(w *Window) {
 	g.XDraw()
 	g.XPaintRects(w.Id, r.ImageRect())
 }
+
+func (l *Layout) SetRegion(indx int, r RegionPainter) {
+	if indx < len(l.regions) {
+		l.regions[indx] = r
+	}
+}
