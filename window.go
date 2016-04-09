@@ -184,8 +184,11 @@ func (w *Window) mouseHandler(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
 			log.Println(w.Title(), " Clicked() ", e.String())
 		} else {
 			// log.Println("Window CallBack ", w.clk)
+			go w.clk()
 
-			// w.clk(w, int(e.EventX), int(e.EventY))
+		}
+		if w.clkAdv != nil {
+			w.clkAdv(w, int(e.EventX), int(e.EventY))
 		}
 	default:
 		// log.Println(w.Title(), "Some Button Clicked() ", e.Detail)

@@ -78,6 +78,10 @@ func (w *Widget) Context() *draw2dimg.GraphicContext {
 	return w.gc
 }
 
+func (w *Widget) SetBackground(c color.Color) {
+	w.bgColor = c
+}
+
 func WidgetFactory(p *Window, dims ...int) *Widget {
 	var w *Widget
 	var err error
@@ -235,6 +239,12 @@ func (w *Widget) AttachHandlers() *Widget {
 	return w
 }
 
+func (w *Widget) UpdateCanvas() {
+	if w.canvas == nil {
+		return
+	}
+	w.updateCanvas()
+}
 func (w *Widget) updateCanvas() {
 	// w.canvas.For(func(x, y int) xgraphics.BGRA {
 	// 	c := w.rawimg.At(x, y).(color.RGBA)
@@ -244,6 +254,10 @@ func (w *Widget) updateCanvas() {
 	// w.canvas.XSurfaceSet(w.xwin.Id)
 	w.canvas.XDraw()
 	w.canvas.XPaint(w.xwin.Id)
+}
+
+func (w *Widget) ID() xproto.Window {
+	return w.xwin.Id
 }
 
 func (w *Widget) onHoverEvent(X *xgbutil.XUtil, e xevent.EnterNotifyEvent) {
