@@ -227,9 +227,9 @@ func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 
 func (w *Widget) mouseClick(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
 	if w.HandlerFunctions.ClkFn == nil {
-		log.Println("Mouse clicked at ", e.EventX, e.EventY)
+		log.Println("Widget :Mouse clicked at ", e.EventX, e.EventY)
 	} else {
-		w.ClkFn()
+		go w.ClkFn()
 	}
 
 }
