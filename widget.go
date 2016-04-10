@@ -189,6 +189,13 @@ func (w *Widget) handleClose() {
 		})
 }
 
+func (w *Widget) Close() {
+	w.xwin.Destroy()
+}
+
+func (w *Widget) GetRect() Rect {
+	return XRectToRect(w.Rect)
+}
 func (w *Widget) SetTitle(title string) {
 	w.title = title
 }
@@ -239,6 +246,12 @@ func (w *Widget) AttachHandlers() *Widget {
 	return w
 }
 
+func (w *Widget) UpdateCanvas() {
+	if w.canvas == nil {
+		return
+	}
+	w.updateCanvas()
+}
 func (w *Widget) updateCanvas() {
 	// w.canvas.For(func(x, y int) xgraphics.BGRA {
 	// 	c := w.rawimg.At(x, y).(color.RGBA)
@@ -248,6 +261,10 @@ func (w *Widget) updateCanvas() {
 	// w.canvas.XSurfaceSet(w.xwin.Id)
 	w.canvas.XDraw()
 	w.canvas.XPaint(w.xwin.Id)
+}
+
+func (w *Widget) ID() xproto.Window {
+	return w.xwin.Id
 }
 
 func (w *Widget) onHoverEvent(X *xgbutil.XUtil, e xevent.EnterNotifyEvent) {
@@ -365,7 +382,7 @@ func (w *Widget) RePaint() {
 	// xg := xgraphics.New(w.xu, r)
 	ir := GetIRect(w.Layout.w, w.Layout.h)
 	ir.Min = image.Point{w.Layout.ox, w.Layout.oy}
-	log.Println("subimage region is ")
+	// log.Println("subimage region is ")
 	xg := w.canvas
 
 	// for i, reg := range w.Layout.regions {
@@ -433,3 +450,109 @@ func (w *Widget) RePaint() {
 	// xg.XPaint(w.xwin.Id) //Rects(w.xwin.Id, pixmap.Bounds())
 
 }
+
+func (w *Widget) PaintRegions() {
+	// w.xwin.Detach()
+
+	/// Get the MAIN View
+	// r := GetIRect(w.Width(), w.Height())
+	// xg := xgraphics.New(w.xu, r)
+	ir := GetIRect(w.Layout.w, w.Layout.h)
+	ir.Min = image.Point{w.Layout.ox, w.Layout.oy}
+	log.Println("subimage region is ")
+	xg := w.canvas
+
+	// for i, reg := range w.Layout.regions {
+	// 	_ = i
+	// 	pmap := reg.PaintRegion()
+
+	// 	rloc := pmap.Bounds() //.Add(w.Layout.offsets[i])
+	// 	log.Println("Plot over this ", rloc, pmap.Bounds())
+	// 	//draw.Draw(w.canvas, rloc, pmap, origin, draw.Src)
+
+	// 	// draw2dimg.DrawImage(pmap, w.gc.SubImage(rloc).(*xgraphics.Image), w.gc.Current.Tr, draw.Over, draw2dimg.BilinearFilter)
+	// 	// w.gc.DrawImage(pmap)
+	// 	// simg := w.canvas.SubImage(rloc).(*xgraphics.Image)
+	// 	xgraphics.Blend(w.canvas, pmap, origin)
+	// }
+	// w.updateCanvas()
+
+	pixmap := w.Layout.regions[0].PaintRegion()
+	// pixmap2 := w.Layout.regions[1].PaintRegion()
+
+	r0 := pixmap.Bounds() //.Add(w.Layout.offsets[0])
+	// r1 := pixmap2.Bounds() //.Add(w.Layout.offsets[1])
+
+	// xg1 := xg.SubImage(r0).(*xgraphics.Image)
+	// xgraphics.Blend(xg1, pixmap, origin)
+
+	// xg2 := xg.SubImage(r1).(*xgraphics.Image)
+	// xgraphics.Blend(xg2, pixmap2, origin)
+
+	size := r0.Size()
+	offset := w.Layout.offsets[0]
+	for x := 0; x < size.X; x++ {
+		for y := 0; y < size.Y; y++ {
+			xg.SetBGRA(x+offset.X+w.Layout.ox, y+offset.Y+w.Layout.oy, toBGRA(pixmap.At(x, y)))
+		}
+	}
+
+	// size = r1.Size()
+	// offset = w.Layout.offsets[1]
+	// for x := 0; x < size.X; x++ {
+	// 	for y := 0; y < size.Y; y++ {
+	// 		xg.SetBGRA(x+offset.X+w.Layout.ox, y+offset.Y+w.Layout.oy, toBGRA(pixmap2.At(x, y)))
+	// 	}
+	// }
+
+	// // border image
+	// outset := w.canvas.Rect
+	// // outset.Max.Sub(image.Point{5, 5})
+	// size = outset.Size()
+	// inset := outset.Inset(2)
+	// for x := 0; x < size.X; x++ {
+	// 	for y := 0; y < size.Y; y++ {
+	// 		xcond := (outset.Min.X >= x && inset.Min.X > x) || (inset.Max.X < x)
+	// 		ycond := (outset.Min.Y >= y && inset.Min.Y > y) || (inset.Max.Y < y)
+	// 		if xcond || ycond {
+	// 			xg.SetBGRA(x, y, DarkGreen)
+	// 		}
+	// 	}
+	// }
+
+	// xg.XDraw()
+	// xg.XPaint(w.xwin.Id)
+	w.canvas.XDraw()
+	w.canvas.XPaint(w.xwin.Id)
+	// xg.XPaint(w.xwin.Id) //Rects(w.xwin.Id, pixmap.Bounds())
+
+}
+
+// wrapper changed
+func NewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Widget {
+	result := WidgetFactory(p, dims...)
+	result.SetTitle(t)
+	return result
+}
+
+func (w *Widget) Win() *Window {
+	win := new(Window)
+	win.Window = w.xwin
+	win.Rect = XRectToRect(w.Rect)
+	return win
+}
+
+// type Window struct {
+// 	//parent *xwindow.Window
+// 	*xwindow.Window
+// 	clkAdv OnClickFn
+// 	clk    func()
+// 	Rect
+// 	title      string
+// 	background colorful.Color
+// 	view       *xwindow.Window
+// 	isButton   bool
+// 	isCheckBox bool
+// 	checkState bool
+// 	wg         sync.Mutex
+// }

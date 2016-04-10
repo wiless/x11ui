@@ -86,6 +86,10 @@ func (r *Rect) ImageRect() image.Rectangle {
 
 }
 
+func XRectToRect(r xrect.Rect) Rect {
+	return Rect{r.X(), r.Y(), r.Width(), r.Height()}
+}
+
 func XRectToImageRect(r xrect.Rect) image.Rectangle {
 	return image.Rect(r.X(), r.Y(), r.Width(), r.Height())
 }

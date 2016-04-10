@@ -79,10 +79,29 @@ func (l *Layout) DrawOnWindow(w *Window) {
 
 	pixmap := l.regions[0].PaintRegion()
 	// r0:=
+	// log.Printf("======== Regions ", l.regions, w)
 	g := xgraphics.NewConvert(w.X(), pixmap)
 	g.XSurfaceSet(w.Id)
 	g.XDraw()
 	g.XPaintRects(w.Id, r.ImageRect())
+}
+
+func (l *Layout) DrawOnWidget(w *Widget) {
+	// r := w.Rect
+
+	pixmap := l.regions[0].PaintRegion()
+	// r0:=
+	// log.Printf("======== Regions ", l.regions, w)
+	g := xgraphics.NewConvert(w.xu, pixmap)
+	g.XSurfaceSet(w.ID())
+	g.XDraw()
+	g.XPaintRects(w.ID(), w.ImageRect())
+}
+
+func (l *Layout) SetRegion(indx int, r RegionPainter) {
+	if indx < len(l.regions) {
+		l.regions[indx] = r
+	}
 }
 
 func (l *Layout) SetRegion(indx int, r RegionPainter) {

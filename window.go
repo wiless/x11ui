@@ -85,6 +85,7 @@ type Window struct {
 	Rect
 	title      string
 	background colorful.Color
+	bgcolor    color.Color
 	view       *xwindow.Window
 	isButton   bool
 	isCheckBox bool
@@ -211,7 +212,11 @@ func (w *Window) SetBackGround(c colorful.Color) {
 	}
 
 }
-
+func (w *Window) SetBGcolor(c color.Color) {
+	w.bgcolor = c
+	g := w.drawView(StateNormal)
+	w.finishPaint(g)
+}
 func (w *Window) X() *xgbutil.XUtil {
 	if w.Window == nil {
 		return nil
@@ -227,13 +232,13 @@ func (w *Window) drawView(s WidgetState) *xgraphics.Image {
 	// bg := colorful.LinearRgb(.025, .025, .025)
 	switch s {
 	case StateNormal, StateReleased:
-		gc.SetFillColor(color.RGBA{0x20, 0x20, 0x20, 20})
+		gc.SetFillColor(w.bgcolor)
 		gc.SetStrokeColor(systemFG)
 	case StateHovered:
-		gc.SetFillColor(color.RGBA{0x35, 0x20, 0x20, 20})
+		gc.SetFillColor(color.RGBA{0x35, 0x20, 0x20, 0x20})
 		gc.SetStrokeColor(systemFG)
 	case StatePressed:
-		gc.SetFillColor(color.RGBA{0x20, 0x30, 0x20, 20})
+		gc.SetFillColor(color.RGBA{0x20, 0x30, 0x20, 0x20})
 		gc.SetStrokeColor(systemFG)
 	case StateSpecial:
 		gc.SetFillColor(color.RGBA{0x20, 0x80, 0x20, 0x80})
@@ -265,7 +270,7 @@ func (w *Window) drawView(s WidgetState) *xgraphics.Image {
 	gc.LineTo(ww, hh)
 	gc.LineTo(margin, hh)
 	gc.LineTo(margin, margin)
-	gc.Stroke()
+	gc.FillStroke()
 	gc.Close()
 
 	g := xgraphics.NewConvert(w.X(), dest)
@@ -492,6 +497,7 @@ func newWindow(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	r := newRect(dims...)
 	win, err := xwindow.Generate(X)
 	// s := X.Screen()
+	w.bgcolor = color.RGBA{0x20, 0x20, 0x20, 0xFF}
 
 	// mask := xproto.GcForeground | xproto.GcGraphicsExposures
 	// values := []uint32{s.BlackPixel, 0}
@@ -615,7 +621,7 @@ func (w *Window) XProtoWin() xproto.Window {
 	return w.Window.Id
 }
 
-func NewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
+func xNewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	w := new(Window)
 	w.title = t
 	w.background = systemBG
