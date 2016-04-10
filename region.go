@@ -103,9 +103,3 @@ func (l *Layout) SetRegion(indx int, r RegionPainter) {
 		l.regions[indx] = r
 	}
 }
-
-func (l *Layout) SetRegion(indx int, r RegionPainter) {
-	if indx < len(l.regions) {
-		l.regions[indx] = r
-	}
-}

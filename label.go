@@ -37,16 +37,22 @@ func NewLabel(title string, p *Window, dims ...int) *Label {
 	return lbl
 }
 
-func (l *Label) AutoResize(auto bool) {
+func (l *Label) AutoResize(auto bool) *Label {
 	l.autoresize = auto
+	l.SetLabel(l.title)
+	return l
 }
 
-func (l *Label) SetAlignMode(align AlignMode) {
+func (l *Label) SetAlignMode(align AlignMode) *Label {
 	l.align = align
+	l.SetLabel(l.title)
+	return l
 }
 
-func (l *Label) SetFontSize(size float64) {
+func (l *Label) SetFontSize(size float64) *Label {
 	l.fsize = size
+	l.SetLabel(l.title)
+	return l
 }
 
 func (l *Label) init() {
@@ -64,7 +70,7 @@ func (l *Label) SetLabel(lbl string) {
 	l.title = lbl
 	if l.autoresize {
 		w, h := xgraphics.Extents(systemFont, l.fsize, l.title)
-		l.Widget.xwin.Resize(w, h)
+		l.Widget.xwin.Resize(w+3, h+3)
 	}
 	l.updateLabel(StateNormal)
 }
