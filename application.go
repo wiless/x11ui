@@ -456,8 +456,10 @@ func (a *Application) NewChildWindow(title string, dims ...int) *Window {
 
 	}
 	// w.SetBackGround(colorful.LinearRgb(0, 0, 0))
+	w.bgcolor = color.RGBA{100, 100, 100, 255}
 	g := w.drawView(StateNormal)
 	w.finishPaint(g)
 	w.SetTitle(title)
+	w.Detach()
 	return w
 }
