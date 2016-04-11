@@ -91,6 +91,7 @@ type Window struct {
 	isCheckBox bool
 	checkState bool
 	wg         sync.Mutex
+	margin 	float64
 }
 
 func (w *Window) Title() string {
@@ -224,6 +225,11 @@ func (w *Window) X() *xgbutil.XUtil {
 	return w.Window.X
 }
 
+func (w *Window) SetMargin(m float64) {
+	w.margin = m	
+	}	
+
+
 func (w *Window) drawView(s WidgetState) *xgraphics.Image {
 	r := w.ImageRect()
 	dest := image.NewRGBA(r)
@@ -245,13 +251,13 @@ func (w *Window) drawView(s WidgetState) *xgraphics.Image {
 		gc.SetStrokeColor(systemFG)
 	}
 
-	gc.SetLineWidth(1)
+	gc.SetLineWidth(0)
 
 	// gc.SetLineJoin(draw2d.RoundJoin)
 	// gc.Rotate(math.Pi / 4.0)
 
 	ww, hh := float64(w.Width), float64(w.Height)
-	margin := 3.0
+	margin := w.margin
 	ww, hh = ww-margin, hh-margin
 	// cx, cy := ww/2, hh/2
 	// Draw a closed shape
