@@ -44,7 +44,7 @@ func (t *TextBox) ShowIBeam() {
 	// for x := t.cursor; x < t.cursor+10; x++ {
 	var toggle bool
 	c := time.Tick(500 * time.Millisecond)
-	for range c {
+	for _ = range c {
 		for y := t.line; y < t.line+t.linespace; y++ {
 			if toggle {
 				t.canvas.SetBGRA(t.cursor, y, toBGRA(t.bgColor))
@@ -113,7 +113,7 @@ func (t *TextBox) AddRulers() {
 	t.gc.SetLineDash([]float64{}, 0)
 }
 func (t *TextBox) handleKeyboard(str string) {
-	if str == "Return" || str=="KP_Enter"{
+	if str == "Return" || str == "KP_Enter" {
 		t.line += t.linespace
 		t.cursor = 0
 		return
