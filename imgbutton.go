@@ -57,8 +57,9 @@ func min(x, y int) int {
 func (t *ImgButton) addPicture() {
 
 	img, err := draw2dimg.LoadFromPngFile(t.fname)
-	deBug("Background Image", err)
 	if err != nil {
+		deBug("Background Image", err)
+
 		return
 	}
 

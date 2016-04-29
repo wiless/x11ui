@@ -71,6 +71,11 @@ func (a *Application) AutoLayout(l LayoutDirection, newpos ...int) {
 	}
 }
 
+func NewApp(fullscreen bool, width, height int) *Application {
+
+	return NewApplication("X11 Application", width, height, true, fullscreen)
+}
+
 func NewApplication(title string, width, height int, resizeable, fullApplication bool) *Application {
 	s := Application{w: width, h: height, title: title, Dark: false}
 	s.KeyMaps = make(map[string]Handler)
@@ -459,7 +464,7 @@ func (a *Application) NewChildWindow(title string, dims ...int) *Window {
 	w.bgcolor = color.RGBA{100, 100, 100, 255}
 	g := w.drawView(StateNormal)
 	w.finishPaint(g)
-	w.SetTitle(title)
+	// w.SetTitle(title)
 	w.Detach()
 	return w
 }

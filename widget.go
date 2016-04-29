@@ -46,6 +46,10 @@ type HandlerFunctions struct {
 	EnableHover bool
 }
 
+type FactorWidgets interface {
+	Move(x, y int)
+}
+
 type Widget struct {
 	xwin   *xwindow.Window
 	pwinID xproto.Window
@@ -65,7 +69,8 @@ type Widget struct {
 	border    float64
 	title     string
 	*Layout
-
+	fsize  int
+	childs []*Widget
 	/// Handlers
 	HandlerFunctions
 }
@@ -80,6 +85,53 @@ func (w *Widget) Context() *draw2dimg.GraphicContext {
 
 func (w *Widget) SetBackground(c color.Color) {
 	w.bgColor = c
+}
+
+func (w *Widget) SetFontSize(fsize int) {
+	w.fsize = fsize
+
+}
+
+func (ww *Widget) CreateChild(dims ...int) *Widget {
+	var w *Widget
+	var err error
+
+	w = new(Widget)
+
+	w.xu = ww.xu
+	w.title = "Empty Widget"
+	r := newRect(dims...)
+	w.pwinID = ww.ID()
+	mousebind.Initialize(w.xu)
+
+	// Create WINDOW using usual approach
+	win, err := xwindow.Generate(w.xu)
+	if err != nil {
+		log.Fatal(err)
+	}
+	win.Create(ww.pwinID, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0)
+	win.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonRelease, xproto.EventMaskExposure, xproto.EventMaskEnterWindow, xproto.EventMaskLeaveWindow)
+	// Set _NET_WM_NAME so it looks nice.
+	// err = ewmh.WmNameSet(w.xu, win.Id, w.title)
+	// deBug("Could not set _NET_WM_NAME ", err)
+
+	// Paint our image before mapping.
+	w.xwin = win
+	w.Rect, err = w.xwin.Geometry()
+	// It's important that the map comes after setting WMGracefulClose, since
+	// the WM isn't obliged to watch updates to the WM_PROTOCOLS property.
+	// w.HandlerFunctions = new
+	w.init()
+	w.Layout = CreateLayout(0, 0, w.Width(), w.Height())
+
+	win.Map()
+	ww.appendChild(w)
+	return w
+}
+
+func (w *Widget) appendChild(child *Widget) {
+
+	w.childs = append(w.childs, child)
 }
 
 func WidgetFactory(p *Window, dims ...int) *Widget {

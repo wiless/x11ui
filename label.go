@@ -17,7 +17,7 @@ const (
 
 type Label struct {
 	*Widget
-	title      string
+	// title      string
 	autoresize bool
 	align      AlignMode
 	fsize      float64
@@ -30,7 +30,9 @@ func NewLabel(title string, p *Window, dims ...int) *Label {
 	lbl := new(Label)
 	lbl.Widget = WidgetFactory(p, dims...)
 	lbl.init()
+	lbl.SetAlignMode(AlignHVCenter)
 	lbl.SetLabel(title)
+
 	// tbox.Create(p, dims...)
 	// tbox.loadTheme()
 	// pbar.SetValue(0.5)

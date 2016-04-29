@@ -125,6 +125,7 @@ func (p *ProgressBar) drawBackground(s WidgetState) {
 	// bg := colorful.LinearRgb(.025, .025, .025)
 	switch s {
 	case StateNormal, StateReleased:
+
 		gc.SetFillColor(color.RGBA{0x20, 0x20, 0x20, 20})
 		gc.SetStrokeColor(systemFG)
 	case StateHovered:
@@ -162,7 +163,8 @@ func (p *ProgressBar) drawBackground(s WidgetState) {
 		gc.SetFillColor(p.barColor)
 		// for i := 0.0; i < NSegments; i++ {
 		draw2dkit.Rectangle(gc, margin, margin, sw, hh)
-		gc.FillStroke()
+		// gc.FillStroke()
+		gc.Stroke()
 
 		/// Draw Grid Lines
 		if p.ShowGrid && p.NGrids > 1 {
