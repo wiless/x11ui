@@ -112,9 +112,8 @@ func (c *CheckBox) CopyPaste(r image.Rectangle) {
 			bg := toBGRA(c.rawimg.At(x, y))
 			return bg
 
-		} else {
-			return c.canvas.At(x, y).(xgraphics.BGRA)
-		}
+		}  
+		return c.canvas.At(x, y).(xgraphics.BGRA)
 
 	})
 	c.canvas.XDraw()
