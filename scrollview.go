@@ -8,12 +8,13 @@ import (
 
 type ScrollView struct {
 	*Widget
-	title       string
-	autoresize  bool
-	align       AlignMode
-	margins     int
-	basewidgets []*Widget
-	viewWidget  *Widget
+	title         string
+	autoresize    bool
+	align         AlignMode
+	margins       int
+	basewidgets   []*Widget
+	viewWidget    *Widget
+	scrollvisible bool
 }
 
 func NewScrollView(title string, p *Window, dims ...int) *ScrollView {
@@ -30,11 +31,50 @@ func NewScrollView(title string, p *Window, dims ...int) *ScrollView {
 }
 
 func (s *ScrollView) init() {
-	s.margins = 30
-	s.createBaseWidgets()
+	s.margins = 0
+	s.scrollvisible = false
+	w, h := s.Width(), s.Height()
+	s.viewWidget = s.CreateChild(s.margins, s.margins, w-2*s.margins, h-2*s.margins)
+	s.SetBackground(color.RGBA{255, 255, 255, 20})
+	s.viewWidget.Win().Detach()
+
 	s.SetFontSize(12)
 	// scrl.updateCanvas()
 
+}
+
+// returns if the scrollbars are visible
+func (s *ScrollView) IsVisible() bool {
+	return s.scrollvisible
+}
+
+func (s *ScrollView) ShowScrollBars(show bool) {
+
+	if show {
+		if s.scrollvisible {
+			// Already visible
+			return
+		}
+		s.margins = 30
+		s.scrollvisible = true
+		s.createBaseWidgets()
+	} else {
+		if !s.scrollvisible {
+			// Already hidden
+			return
+		}
+		s.scrollvisible = false
+		for i, v := range s.basewidgets {
+			v.Close()
+			s.basewidgets[i] = nil
+			// .SetBackground(color.RGBA{100 + i*20, 200, 200, 0})
+		}
+		// s.basewidgets = nil
+		s.margins = 0
+
+	}
+	w, h := s.Width(), s.Height()
+	s.viewWidget.Resize(s.margins, s.margins, w-2*s.margins, h-2*s.margins)
 }
 
 // createBaseWidgets creates basic widgets like the inset widget where all child widgets will be added
@@ -53,8 +93,6 @@ func (s *ScrollView) createBaseWidgets() {
 	for i = 0; i < 4; i++ {
 		s.basewidgets[i].SetBackground(color.RGBA{100 + i*20, 200, 200, 0})
 	}
-	s.viewWidget = s.CreateChild(s.margins, s.margins, w-2*s.margins, h-2*s.margins)
-	s.SetBackground(color.RGBA{255, 255, 255, 255})
 
 	s.basewidgets[0].ClkFn = s.ScrollUp
 	s.basewidgets[1].ClkFn = s.ScrollDown

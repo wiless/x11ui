@@ -1,6 +1,12 @@
 package main
 
-import "github.com/wiless/x11ui"
+import (
+	"log"
+
+	"github.com/wiless/x11ui"
+)
+
+var sview *x11ui.ScrollView
 
 func main() {
 
@@ -8,7 +14,7 @@ func main() {
 	app := x11ui.NewApp(false, 500, 500)
 	w := app.NewChildWindow("Something ", 50, 50, 350, 350)
 
-	sview := x11ui.NewScrollView("View My", w, 0, 0, 350, 350)
+	sview = x11ui.NewScrollView("View My", w, 0, 0, 350, 350)
 	// sview.View().SetBGcolor(color.RGBA{255, 200, 100, 30})
 	lbl := x11ui.NewLabel("VBar 1", sview.View(), 30, 30, 100, 30)
 	sview.AddWidget(lbl.Widget)
@@ -17,5 +23,18 @@ func main() {
 	lbl = x11ui.NewLabel("VBar 3", sview.View(), 30, 90, 100, 30)
 	sview.AddWidget(lbl.Widget)
 
+	btn := x11ui.NewLabel("Ok", app.AppWin(), 0, 0, 100, 30) // app.NewChildWindow("Ok", 0, 0, 100, 30)
+	btn.ClkFn = HideView
+
+	btn1 := x11ui.NewLabel("Up", app.AppWin(), 0, 30, 100, 30) // app.NewChildWindow("Ok", 0, 0, 100, 30)
+	btn1.ClkFn = sview.ScrollUp
+	btn2 := x11ui.NewLabel("Down", app.AppWin(), 0, 60, 100, 30) // app.NewChildWindow("Ok", 0, 0, 100, 30)
+	btn2.ClkFn = sview.ScrollDown
+
 	app.Show()
+}
+
+func HideView() {
+	log.Println("Toggle Scroll view")
+	sview.ShowScrollBars(!sview.IsVisible())
 }

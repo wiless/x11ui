@@ -163,8 +163,8 @@ func (p *ProgressBar) drawBackground(s WidgetState) {
 		gc.SetFillColor(p.barColor)
 		// for i := 0.0; i < NSegments; i++ {
 		draw2dkit.Rectangle(gc, margin, margin, sw, hh)
-		// gc.FillStroke()
-		gc.Stroke()
+		gc.FillStroke()
+		// gc.Stroke()
 
 		/// Draw Grid Lines
 		if p.ShowGrid && p.NGrids > 1 {
