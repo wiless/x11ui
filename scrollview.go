@@ -15,6 +15,9 @@ type ScrollView struct {
 	basewidgets   []*Widget
 	viewWidget    *Widget
 	scrollvisible bool
+	stepSize      int
+	stepLimits    int
+	stepcount     int
 }
 
 func NewScrollView(title string, p *Window, dims ...int) *ScrollView {
@@ -33,13 +36,25 @@ func NewScrollView(title string, p *Window, dims ...int) *ScrollView {
 func (s *ScrollView) init() {
 	s.margins = 0
 	s.scrollvisible = false
+	s.SetStepSize(10) // default step size 10px
+	s.SetMaxSteps(-1)
 	w, h := s.Width(), s.Height()
 	s.viewWidget = s.CreateChild(s.margins, s.margins, w-2*s.margins, h-2*s.margins)
-	s.SetBackground(color.RGBA{255, 255, 255, 20})
 	s.viewWidget.Win().Detach()
-
+	s.Win().SetBGcolor(color.RGBA{255, 255, 0, 255})
+	// s.updateCanvas()
 	s.SetFontSize(12)
 	// scrl.updateCanvas()
+
+}
+
+func (s *ScrollView) SetBackground(c color.Color) {
+	s.viewWidget.Win().SetBGcolor(c)
+	// s.Win().SetBGcolor(c)
+	// s.viewWidget.drawBackground()
+	// s.updateCanvas()
+	// log.Println("I am here")
+	// s.viewWidget.Win().SetBGcolor(color.RGBA{255, 0, 0, 20})
 
 }
 
@@ -99,17 +114,34 @@ func (s *ScrollView) createBaseWidgets() {
 
 }
 
+func (s *ScrollView) SetStepSize(step int) {
+	s.stepSize = step
+	s.stepcount = 0
+}
+func (s *ScrollView) SetMaxSteps(maxsteps int) {
+	s.stepLimits = maxsteps
+	s.stepcount = 0
+}
+
 func (s *ScrollView) ScrollUp() {
-	s.ScrollChilds(0, -10)
+
+	if s.stepcount < s.stepLimits || s.stepLimits == -1 {
+		s.ScrollChilds(0, -s.stepSize)
+		s.stepcount++
+	}
+
 }
 
 func (s *ScrollView) ScrollDown() {
-	s.ScrollChilds(0, 10)
+	if s.stepcount > 0 {
+		s.ScrollChilds(0, s.stepSize)
+		s.stepcount--
+	}
 }
 func (s *ScrollView) ScrollChilds(dx, dy int) {
-	for i, v := range s.viewWidget.childs {
+	for _, v := range s.viewWidget.childs {
 		x, y := v.X(), v.Y()
-		log.Printf("%v : %v is at %v,%v", i, v.title, v.X(), v.Y())
+
 		x += dx
 		y += dy
 		v.Win().Move(x, y)

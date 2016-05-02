@@ -1,6 +1,7 @@
 package x11ui
 
 import (
+	"image/color"
 	"log"
 
 	"github.com/BurntSushi/xgbutil/xgraphics"
@@ -65,6 +66,12 @@ func (l *Label) init() {
 	l.updateCanvas()
 	// go t.ShowIBeam()
 	// l.registerHandlers()
+
+}
+
+func (l *Label) SetBackground(c color.Color) {
+	l.Widget.SetBackground(c)
+	l.SetLabel(l.title)
 
 }
 
