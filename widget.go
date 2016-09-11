@@ -511,7 +511,7 @@ func (w *Widget) PaintRegions() {
 	// xg := xgraphics.New(w.xu, r)
 	ir := GetIRect(w.Layout.w, w.Layout.h)
 	ir.Min = image.Point{w.Layout.ox, w.Layout.oy}
-	log.Println("subimage region is ")
+	// log.Println("subimage region is ")
 	xg := w.canvas
 
 	// for i, reg := range w.Layout.regions {

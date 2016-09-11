@@ -19,7 +19,6 @@ func main() {
 
 	a := x11ui.NewImgButton("OK", app.AppWin(), 0, 200, 200, 200)
 	t := x11ui.NewImgButton("OK", app.AppWin(), 200, 500, 200, 200)
-
 	go func() {
 		a.SetPicture("hg.png")
 		t.SetPicture("hg.png")
@@ -28,8 +27,9 @@ func main() {
 
 	}()
 
-	/// show a checkbox
+	/// show a checkboxs
 	cb := x11ui.NewCheckBox("Disable", app.AppWin(), 40, 40, 200, 200)
 	cb.RePaint()
 	app.Show()
+
 }

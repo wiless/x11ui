@@ -2,6 +2,7 @@ package x11ui
 
 import (
 	"image/color"
+	"time"
 
 	"log"
 )
@@ -126,6 +127,7 @@ func (s *ScrollView) SetMaxSteps(maxsteps int) {
 func (s *ScrollView) ScrollUp() {
 
 	if s.stepcount < s.stepLimits || s.stepLimits == -1 {
+
 		s.ScrollChilds(0, -s.stepSize)
 		s.stepcount++
 	}
@@ -134,18 +136,46 @@ func (s *ScrollView) ScrollUp() {
 
 func (s *ScrollView) ScrollDown() {
 	if s.stepcount > 0 {
+		// log.Println("I will ANimate")
+		// // Animate Duration
+		// // aDuration:=1000
+		// aSteps:=10;
+		// for i := 1; i <= aSteps; i++ {
+		// s.ScrollChilds(0, s.stepSize*i/aSteps)
+		// time.Sleep(100*time.Millisecond)		
+		// }
+
+
+		// Non-Animated Scroll
 		s.ScrollChilds(0, s.stepSize)
+
 		s.stepcount--
 	}
 }
 func (s *ScrollView) ScrollChilds(dx, dy int) {
-	for _, v := range s.viewWidget.childs {
+
+
+	fn:= func(ddx,ddy int) {
+	
+		for _, v := range s.viewWidget.childs {
 		x, y := v.X(), v.Y()
 
-		x += dx
-		y += dy
+		x += ddx
+		y += ddy
 		v.Win().Move(x, y)
+		}
 	}
+
+		// log.Println("I will ANimate")
+		// // Animate Duration
+		// // aDuration:=1000
+		aSteps:=10;
+		tinydx,tinydy:=dx/aSteps, dy/aSteps
+		for i := 1; i <= aSteps; i++ {
+		fn(tinydx,tinydy)
+		time.Sleep(50*time.Millisecond)		
+		}
+
 }
 
 func (s *ScrollView) AddWidget(w *Widget) {
