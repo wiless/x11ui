@@ -1,6 +1,7 @@
 package x11ui
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"log"
@@ -23,8 +24,10 @@ type TextBox struct {
 	line      int
 	charSpace int
 	linespace int
+	readOnly  bool
 }
 
+//NewTextBox creates a child TextBox widget in the roots of Window p
 func NewTextBox(title string, p *Window, dims ...int) *TextBox {
 	if p == nil {
 		log.Fatal("Cannot Create Widget without Application")
@@ -66,6 +69,18 @@ func (t *TextBox) ShowIBeam() {
 
 }
 
+func (t *TextBox) SetReadOnly(readonly bool) {
+
+	if !t.readOnly && readonly {
+		xevent.Detach(t.xu, t.xwin.Id)
+		t.readOnly = readonly
+	}
+	if t.readOnly && !readonly {
+		t.readOnly = readonly
+		xevent.KeyPressFun(t.keybHandler).Connect(t.xu, t.xwin.Id)
+	}
+}
+
 func (t *TextBox) registerHandlers() {
 	xevent.KeyPressFun(t.keybHandler).Connect(t.xu, t.xwin.Id)
 }
@@ -99,8 +114,78 @@ func (t *TextBox) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 
 }
 
+func (t *TextBox) SetText(txt string) {
+	ar := strings.Split(txt, "")
+
+	for _, s := range ar {
+
+		t.handleKeyboard(s)
+	}
+
+}
+
+// lineWidth returns the number of characters that can be accomodated in a line
+func (t *TextBox) lineWidth() int {
+	return (t.Width() - int(t.margin))
+}
+
+func (t *TextBox) AppendLine(str string) {
+
+	if strings.Contains(str, "\n") {
+		ar := strings.Split(str, "\n")
+
+		for _, s := range ar {
+			t.AppendLine(s)
+		}
+		return
+	}
+
+	t.line += t.linespace
+	t.cursor = 0
+
+	charsPerLine := 29
+	if len(str) > charsPerLine {
+
+		splits := SplitSubN(str, charsPerLine)
+		for _, ss := range splits {
+			t.AppendLine(ss)
+		}
+		return
+	}
+
+	nx, ny, _ := t.canvas.Text(int(t.cursor), int(t.line), t.txtColor, 12, systemFont, str)
+	_ = ny
+	// log.Println("nx,ny", nx, ny)
+	t.cursor = nx
+
+	if t.cursor > (t.Width() - int(t.margin)) {
+		t.line += t.linespace // line spacing
+		t.cursor = 0
+	}
+
+	t.updateCanvas()
+}
+
+func SplitSubN(s string, n int) []string {
+	sub := ""
+	subs := []string{}
+
+	runes := bytes.Runes([]byte(s))
+	l := len(runes)
+	for i, r := range runes {
+		sub = sub + string(r)
+		if (i+1)%n == 0 {
+			subs = append(subs, sub)
+			sub = ""
+		} else if (i + 1) == l {
+			subs = append(subs, sub)
+		}
+	}
+
+	return subs
+}
 func (t *TextBox) AddRulers() {
-	t.gc.SetFillColor(color.RGBA{0, 0, 0, 0})
+	t.gc.SetFillColor(color.RGBA{0, 128, 0, 0})
 	t.gc.SetStrokeColor(color.RGBA{30, 30, 100, 0})
 	width := float64(t.Width())
 	t.gc.SetLineDash([]float64{10, 5, 10, 5}, 0)
@@ -113,7 +198,7 @@ func (t *TextBox) AddRulers() {
 	t.gc.SetLineDash([]float64{}, 0)
 }
 func (t *TextBox) handleKeyboard(str string) {
-	if str == "Return" || str=="KP_Enter"{
+	if str == "Return" || str == "KP_Enter" || str == "\n" {
 		t.line += t.linespace
 		t.cursor = 0
 		return
@@ -129,7 +214,7 @@ func (t *TextBox) handleKeyboard(str string) {
 		return
 	}
 	if len(str) != 1 {
-		log.Println("I am returning")
+		log.Println("I am returning more than 1 Char")
 		return
 	}
 
@@ -185,6 +270,7 @@ func (t *TextBox) init() {
 	log.Println("extends ", cw, ch)
 	t.linespace = ch
 	t.charSpace = cw
+	t.readOnly = false
 
 	t.drawTextBox(StateNormal)
 	// t.AddRulers()
@@ -207,22 +293,5 @@ func (t *TextBox) drawTextBox(s WidgetState) {
 	gc.Close()
 
 	t.canvas.XSurfaceSet(t.xwin.Id)
-
-	// t.updateCanvas()
-	// // bg := colorful.LinearRgb(.025, .025, .025)
-	// switch s {
-	// case StateNormal, StateReleased:
-	// 	gc.SetFillColor(color.RGBA{0x20, 0x20, 0x20, 20})
-	// 	gc.SetStrokeColor(systemFG)
-	// case StateHovered:
-	// 	gc.SetFillColor(color.RGBA{0x35, 0x20, 0x20, 20})
-	// 	gc.SetStrokeColor(systemFG)
-	// case StatePressed:
-	// 	gc.SetFillColor(color.RGBA{0x20, 0x30, 0x20, 20})
-	// 	gc.SetStrokeColor(systemFG)
-	// case StateSpecial:
-	// 	gc.SetFillColor(color.RGBA{0x20, 0x80, 0x20, 0x80})
-	// 	gc.SetStrokeColor(systemFG)
-	// }
 
 }
