@@ -115,11 +115,15 @@ func (t *TextBox) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 }
 
 func (t *TextBox) SetText(txt string) {
-	ar := strings.Split(txt, "")
+	ar := strings.Split(txt, "\n")
+	t.line = 0
+	t.cursor = 0
+	t.bgColor = color.RGBA{0, 0, 255, 0}
 
+	t.drawBackground()
+	t.drawTextBox(StateNormal)
 	for _, s := range ar {
-
-		t.handleKeyboard(s)
+		t.AppendLine(s)
 	}
 
 }
