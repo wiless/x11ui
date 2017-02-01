@@ -73,6 +73,11 @@ type Widget struct {
 	childs []*Widget
 	/// Handlers
 	HandlerFunctions
+	modal bool
+}
+
+func (w *Widget) SetModal(modal bool) {
+	w.modal = modal
 }
 
 func (w *Widget) SetX(X *xgbutil.XUtil) {
@@ -138,6 +143,7 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 	var w *Widget
 	var err error
 	w = new(Widget)
+	w.modal = false
 	DEBUG_LEVEL = 1
 	if p == nil {
 		log.Println("Cannot create Widget without Parent Window")
@@ -281,7 +287,11 @@ func (w *Widget) mouseClick(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
 	if w.HandlerFunctions.ClkFn == nil {
 		log.Println("Widget :Mouse clicked at ", e.EventX, e.EventY)
 	} else {
-		go w.ClkFn()
+		if !w.modal {
+			go w.ClkFn()
+		} else {
+			w.ClkFn()
+		}
 	}
 
 }
