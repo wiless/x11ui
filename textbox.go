@@ -35,6 +35,7 @@ func NewTextBox(title string, p *Window, dims ...int) *TextBox {
 	tbox := new(TextBox)
 	tbox.Widget = WidgetFactory(p, dims...)
 	tbox.init()
+	tbox.readOnly = true
 
 	// tbox.Create(p, dims...)
 	// tbox.loadTheme()
@@ -72,17 +73,22 @@ func (t *TextBox) ShowIBeam() {
 func (t *TextBox) SetReadOnly(readonly bool) {
 
 	if !t.readOnly && readonly {
-		xevent.Detach(t.xu, t.xwin.Id)
+		keybind.Detach(t.xu, t.xwin.Id)
+		log.Println("Enable readonly")
 		t.readOnly = readonly
-	}
-	if t.readOnly && !readonly {
+	} else if t.readOnly && !readonly {
 		t.readOnly = readonly
 		xevent.KeyPressFun(t.keybHandler).Connect(t.xu, t.xwin.Id)
+		log.Println("Capture KEYBOARD")
+
 	}
 }
 
 func (t *TextBox) registerHandlers() {
-	xevent.KeyPressFun(t.keybHandler).Connect(t.xu, t.xwin.Id)
+	if !t.readOnly {
+		log.Println("Will capture keys : ", t.readOnly)
+		xevent.KeyPressFun(t.keybHandler).Connect(t.xu, t.xwin.Id)
+	}
 }
 func (t *TextBox) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 
@@ -274,7 +280,7 @@ func (t *TextBox) init() {
 	log.Println("extends ", cw, ch)
 	t.linespace = ch
 	t.charSpace = cw
-	t.readOnly = false
+	t.readOnly = true
 
 	t.drawTextBox(StateNormal)
 	// t.AddRulers()

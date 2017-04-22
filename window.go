@@ -91,7 +91,9 @@ type Window struct {
 	isCheckBox bool
 	checkState bool
 	wg         sync.Mutex
-	margin 	float64
+	margin     float64
+	rawimage   *image.RGBA
+	ximg       *xgraphics.Image
 }
 
 func (w *Window) Title() string {
@@ -226,9 +228,8 @@ func (w *Window) X() *xgbutil.XUtil {
 }
 
 func (w *Window) SetMargin(m float64) {
-	w.margin = m	
-	}	
-
+	w.margin = m
+}
 
 func (w *Window) drawView(s WidgetState) *xgraphics.Image {
 	r := w.ImageRect()
@@ -522,7 +523,7 @@ func newWindow(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	}
 
 	//if p == nil {
-	win.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonRelease, xproto.EventMaskExposure, xproto.EventMaskEnterWindow, xproto.EventMaskLeaveWindow)
+	win.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonRelease, xproto.EventMaskExposure, xproto.EventMaskEnterWindow, xproto.EventMaskLeaveWindow, xproto.EventMaskKeyPress)
 	//}
 
 	w.Rect = r
@@ -673,4 +674,75 @@ func xNewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	w.Rect = r
 	// xevent.ButtonPressFun(w.mouseHandler).Connect(X, win.Id)
 	return w
+}
+
+func (w *Window) CreateRawImage(x, y, ww, hh int) *image.RGBA {
+	w.rawimage = image.NewRGBA(image.Rect(x, y, ww, hh))
+
+	// w.rawimage.SetRGBA(x int, y int, c color.RGBA)
+	w.ximg = xgraphics.NewConvert(w.X(), w.rawimage)
+	err := w.ximg.XSurfaceSet(w.Id)
+	log.Print(err)
+	return w.rawimage
+}
+
+func (w Window) RawImage() *image.RGBA {
+	return w.rawimage
+}
+
+func (w *Window) UpdatePlot(img image.Image) {
+
+	// log.Printf("Bounds ", img.Bounds(), "window rects", w.Rect)
+	// ox, oy := w.Rect.X, w.Rect.Y
+	rr := w.ImageRect()
+
+	xgraphics.Blend(w.ximg, w.rawimage, image.Point{0, 0})
+	// ximg = xgraphics.NewConvert(w.X(), xgraphics.Scale(img, rr.Dx(), rr.Dy()))
+
+	w.ximg.XSurfaceSet(w.Id)
+	log.Print("Redrawing ", rr)
+	w.ximg.XPaintRects(w.Id, image.Rect(0, 0, rr.Dx(), rr.Dy()))
+	w.ximg.XDraw()
+
+}
+func (w *Window) ReDrawImage() {
+	if w.rawimage == nil {
+		log.Print("Create Raw Image .. first")
+		return
+	}
+	// log.Printf("Bounds ", img.Bounds(), "window rects", w.Rect)
+	// ox, oy := w.Rect.X, w.Rect.Y
+	// rr := w.rawimage.Bounds()
+	rr, _ := w.Geometry()
+	// log.Print("PLOT WIN RESIZED", rr)
+	// // w.ximg := xgraphics.NewConvert(w.X(),xgraphics.Scale(w.rawimage, rr.Dx(), rr.Dy()))
+	// // w.ximg. = xgraphics.NewConvert(w.X(), w.rawimage)
+	//
+	// // xgraphics.Scale(w.rawimage, rr.Width(), rr.Height())
+	// w.ximg = w.ximg.Scale(rr.Width(), rr.Height())
+	// err := w.ximg.XSurfaceSet(w.Id)
+	// log.Print(err)
+	// log.Print("ximg ", w.ximg.Bounds())
+	// log.Print("rawimg ", w.rawimage.Rect)
+	// di := xgraphics.Scale(w.rawimage, rr.Width(), rr.Height())
+	// log.Print("scaled raw ", di.Bounds())
+	xgraphics.Blend(w.ximg, w.rawimage, image.Point{0, 0})
+	// log.Print("Xpaint raw ", rr.Width(), rr.Height())
+	// w.ximg.For(func(x int, y int) xgraphics.BGRA {
+	// 	var c xgraphics.BGRA
+	// 	ic := w.rawimage.At(x, y)
+	// 	r, g, b, _ := ic.RGBA()
+	// 	c.R = uint8(r)
+	// 	c.G = uint8(g)
+	// 	c.B = uint8(b)
+	// 	c.A = 255
+	// 	// log.Print("Replacing @ ", x, y, ic, c)
+	// 	return c
+	// })
+	// ximg = xgraphics.NewConvert(w.X(), xgraphics.Scale(img, rr.Dx(), rr.Dy()))
+
+	//w.ximg.XSurfaceSet(w.Id)
+	w.ximg.XPaintRects(w.Id, image.Rect(0, 0, rr.Width(), rr.Height()))
+	w.ximg.XDraw()
+
 }

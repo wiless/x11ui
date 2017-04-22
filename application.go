@@ -101,6 +101,7 @@ func NewApplication(title string, width, height int, resizeable, fullApplication
 
 	s.keycallbacks = s.keybHandler
 	xevent.KeyPressFun(s.keybHandler).Connect(s.xu, s.AppWin().Id)
+
 	mousebind.ButtonPressFun(s.mouseHandler).Connect(s.xu, s.appWin.Id, "1", false, false)
 	// cb1 := keybind.KeyPressFun(
 	// 	func(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
@@ -173,12 +174,14 @@ func (s *Application) RegisterGlobalKey(keyname string, fn Handler) bool {
 
 }
 
+//RegisterKey registers a key with a function
 func (s *Application) RegisterKey(keyname string, fn Handler) bool {
 	// log.Println("Current Root ", s.xu)
 
 	s.KeyMaps[keyname] = fn
-	log.Println("Registering ", keyname, " with this ", fn)
-
+	if s.Debug {
+		log.Println("Registering ", keyname, " with this ", fn)
+	}
 	// if len(s.KeyMaps) == 0 {
 	// 	xevent.KeyPressFun(s.keybHandler).Connect(s.xu, s.bgWin.Id)
 	// }
@@ -190,6 +193,13 @@ func (s *Application) Show() {
 
 	xevent.Main(s.xu)
 
+}
+
+func (s *Application) DefaultKeys(enable bool) {
+	if enable {
+		s.RegisterKey("q", s.Close)
+		s.RegisterKey("f", s.FullScreen)
+	}
 }
 
 func (s *Application) Close() {
@@ -224,12 +234,26 @@ func (s *Application) defaultWindow() {
 	s.appWin.Create(s.xu.RootWin(), 0, 0, w, h, xproto.CwBackPixel, 0x101010)
 
 	// Listen for Key{Press,Release} events.
-	s.appWin.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonPress)
-	xevent.ResizeRequestFun(
-		func(p *xgbutil.XUtil, e xevent.ResizeRequestEvent) {
-			log.Printf("Received event ", e)
+	s.appWin.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonPress, xproto.EventMaskSubstructureNotify, xproto.EventMaskStructureNotify)
+
+	// xevent.ResizeRequestFun(
+	// 	func(p *xgbutil.XUtil, e xevent.ResizeRequestEvent) {
+	// 		log.Printf("2. Received event ", e)
+	//
+	// 	}).Connect(s.xu, s.appWin.Id)
+	//
+	xevent.ConfigureRequestFun(
+		func(p *xgbutil.XUtil, e xevent.ConfigureRequestEvent) {
+			log.Printf("4. CONFIGURE REEQUEST ", e)
 
 		}).Connect(s.xu, s.appWin.Id)
+
+	xevent.ConfigureNotifyFun(
+		func(p *xgbutil.XUtil, e xevent.ConfigureNotifyEvent) {
+			log.Printf("3. Received CONFIGNOTIFICATION ", e)
+
+		}).Connect(s.xu, s.appWin.Id)
+
 	// Make this window close gracefully.
 	s.appWin.WMGracefulClose(
 		func(w *xwindow.Window) {

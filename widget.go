@@ -152,7 +152,10 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 	w.xu = p.X()
 	w.title = "Empty Widget"
 	r := newRect(dims...)
-
+	if len(dims) == 0 || len(dims) == 2 {
+		r.Width = p.Width
+		r.Height = p.Height
+	}
 	w.pwinID = p.Id
 	mousebind.Initialize(w.xu)
 
