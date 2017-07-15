@@ -11,7 +11,5 @@ Look for documentation here https://godoc.org/github.com/wiless/x11ui
 # Sample Application (Private project)
 
 [Youtube Video](https://www.youtube.com/watch?v=y7JasppN1FI)
-
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=y7JasppN1FI
-" target="_blank"><img src="http://img.youtube.com/vi/y7JasppN1FI/0.jpg" 
-alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
+ 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/y7JasppN1FI" frameborder="0" allowfullscreen></iframe>
