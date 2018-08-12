@@ -726,7 +726,21 @@ func (w *Window) ReDrawImage() {
 	// log.Print("rawimg ", w.rawimage.Rect)
 	// di := xgraphics.Scale(w.rawimage, rr.Width(), rr.Height())
 	// log.Print("scaled raw ", di.Bounds())
+
+	rc := color.RGBA{255, 255, 0, 255}
+	red := image.NewRGBA(w.rawimage.Bounds())
+	for x := 0; x < red.Bounds().Dx(); x++ {
+		for y := 0; y < red.Bounds().Dy(); y++ {
+			red.SetRGBA(x, y, rc)
+		}
+
+	}
+	xgraphics.Blend(w.ximg, red, image.Point{10, 10})
 	xgraphics.Blend(w.ximg, w.rawimage, image.Point{0, 0})
+	// xgraphics.Blend(w.ximg, red, image.Point{10, 10})
+
+	// xgraphics.BlendBgColor(w.ximg, rc) //(w.ximg, red, image.Point{0, 0})
+
 	// log.Print("Xpaint raw ", rr.Width(), rr.Height())
 	// w.ximg.For(func(x int, y int) xgraphics.BGRA {
 	// 	var c xgraphics.BGRA

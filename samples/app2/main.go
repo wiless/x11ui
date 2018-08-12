@@ -5,13 +5,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/BurntSushi/xgb/glx"
-
 	"github.com/BurntSushi/xgbutil/ewmh"
 	"github.com/llgcode/draw2d/draw2dgl"
 	"github.com/llgcode/draw2d/draw2dkit"
 
-	"github.com/wiless/x11widgets"
+	"github.com/wiless/x11ui"
 )
 
 func drawgl() {
@@ -34,6 +32,8 @@ func init() {
 
 func SayHello() {
 
+	log.Println("------------ HELLO you pressed Shift+?")
+	log.Println("------------")
 	// ewmh.WmStateReq(app.AppWin().X(), dlg.Id, ewmh.StateToggle, "_NET_WM_STATE_FULLSCREEN")
 
 	// ewmh.ActiveWindowSet(app.AppWin().X(), dlg.Id) //_NET_ACTIVE_WINDOW
@@ -64,57 +64,58 @@ func main() {
 	// // s.RegisterGlobalKey("control-mod2-f", DoThis)
 	app.SetDefaultKeys()
 
-	c := app.XWin().X.Conn()
-	Screen := c.DefaultScreen
-	fbConfig, _ := glx.NewFbconfigId(c)
-	context, _ := glx.NewContextId(c)
-	/* Create a GLX context for OpenGL rendering */
-	// context = glXCreateNewContext( dpy, fbConfigs[0], GLX_RGBA_TYPE,				 NULL, True );
-	context := glx.CreateNewContext(c, context, fbConfig, Screen, GLX_RGBA_TYPE, nil, true)
-	glx.CreateWindow(c, Screen, Fbconfig, Window, GlxWindow, NumAttribs, Attribs)
+	// c := app.XWin().X.Conn()
+	// Screen := c.DefaultScreen
+	// fbConfig, _ := glx.NewFbconfigId(c)
+	// context, _ := glx.NewContextId(c)
+	// /* Create a GLX context for OpenGL rendering */
+	// // context = glXCreateNewContext( dpy, fbConfigs[0], GLX_RGBA_TYPE,				 NULL, True );
+	// context = glx.CreateNewContext(c, context, fbConfig, Screen, GLX_RGBA_TYPE, nil, true)
+	// glx.CreateWindow(c, Screen, Fbconfig, Window, GlxWindow, NumAttribs, Attribs)
 	/* Create a GLX window to associate the frame buffer configuration
 	 ** with the created X window */
 	// glxWin = glXCreateWindow( dpy, fbConfigs[0], xWin, NULL );
 
-	// app.RegisterKey("shift-?", SayHello)
-	// app.AppWin().OnClick(mainfn)
+	app.RegisterKey("shift?", SayHello)
+	app.AppWin().OnClick(mainfn)
 
-	// // dlg := s.NewFloatingWindow("File Open")
-	// // dlg := newWindow(s.xu, nil, 0, 0, 400, 800)
-	// // dlg.SetTitle("Dialog")
-	// // dlg.OnClick(floatwin)
-	// // dlg = app.NewFloatingWindow("New Dialog", 0, 300)
-	// done = make(chan bool)
+	dlg := app.NewFloatingWindow("File Open")
+	// dlg := newWindow(s.xu, nil, 0, 0, 400, 800)
+	// dlg.SetTitle("Dialog")
+	dlg.OnClick(floatwin)
 
-	// // child.OnClick(childfn)
-	// app.SetLayoutSpacing(5, 5)
+	app.NewFloatingWindow("New Dialog", 0, 300)
+	done = make(chan bool)
 
-	// app.AutoLayout(x11ui.LayoutHor, 10, 10)
+	// child.OnClick(childfn)
+	app.SetLayoutSpacing(5, 5)
 
-	// app.AddButton("Hello", 0, 0).OnClick(mainfn)
-	// app.AddButton("Sensor 1", 0, 0).OnClick(extrafn1)
-	// app.AddButton("Long Process", 100, 0).OnClick(extrafn2)
-	// app.AddToggleBtn("Pause", 200, 0).OnClickAdv(toggle)
+	app.AutoLayout(x11ui.LayoutHor, 10, 10)
 
-	// app.AutoLayout(x11ui.LayoutVer, 10, 200)
+	app.AddButton("Hello", 0, 0).OnClick(mainfn)
+	app.AddButton("Sensor 1", 0, 0).OnClick(extrafn1)
+	app.AddButton("Long Process", 100, 0).OnClick(extrafn2)
+	app.AddToggleBtn("Pause", 200, 0).OnClickAdv(toggle)
 
-	// app.AddButton("Pink 4", 300, 0).OnClick(extrafn1)
-	// app.AddButton("graph", 400, 0).OnClick(plotgraph)
-	// app.AddButton("Pink 4", 300, 0)
-	// app.AddButton("graph", 400, 0)
-	// app.AddButton("Pink 4", 300, 0)
-	// app.AddButton("graph", 400, 0)
-	// app.AutoLayout(x11ui.LayoutHor, 120, 200, 602, 400)
-	// child = app.NewChildWindow("View 1")
-	// child2 = app.NewChildWindow("View 2", 100, 100, 400, 500)
+	app.AutoLayout(x11ui.LayoutVer, 10, 200)
 
-	// // obtn := NewButton("Orange ", dlg, 0, 400)
-	// // obtn.SetBackGround(0xFF00FF)
-	// // // obtn.StackSibling(dlg.Id, xproto.StackModeAbove)
-	// // obtn.OnClick(okbutton)
-	// // btn.OnClick(childfn)
-	// // btn.SetBackGround(0xFFAA00)
-	// go startPlot()
+	app.AddButton("Pink 4", 300, 0).OnClick(extrafn1)
+	app.AddButton("graph", 400, 0).OnClick(plotgraph)
+	app.AddButton("Pink 4", 300, 0)
+	app.AddButton("graph", 400, 0)
+	app.AddButton("Pink 4", 300, 0)
+	app.AddButton("graph", 400, 0)
+	app.AutoLayout(x11ui.LayoutHor, 120, 200, 602, 400)
+	child = app.NewChildWindow("View 1")
+	child2 = app.NewChildWindow("View 2", 100, 100, 400, 500)
+
+	// obtn := NewButton("Orange ", dlg, 0, 400)
+	// obtn.SetBackGround(0xFF00FF)
+	// // obtn.StackSibling(dlg.Id, xproto.StackModeAbove)
+	// obtn.OnClick(okbutton)
+	// btn.OnClick(childfn)
+	// btn.SetBackGround(0xFFAA00)
+	go startPlot()
 	app.Show()
 
 }
@@ -150,7 +151,7 @@ func toggle(w *x11ui.Window, _, _ int) {
 }
 
 func mainfn() {
-
+	log.Println("mainfn : Did you call me??")
 }
 
 func plotgraph() {
@@ -159,7 +160,7 @@ func plotgraph() {
 
 }
 func floatwin() {
-
+	log.Println("------ new dialog opened...")
 }
 func childfn() {
 

@@ -153,6 +153,8 @@ func (s *Application) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 			log.Printf("Caught Key : %s", finalstr)
 		}
 		fn()
+	} else {
+		log.Printf("Caught Key : %s", finalstr)
 	}
 
 }
@@ -244,13 +246,17 @@ func (s *Application) defaultWindow() {
 	//
 	xevent.ConfigureRequestFun(
 		func(p *xgbutil.XUtil, e xevent.ConfigureRequestEvent) {
-			log.Printf("4. CONFIGURE REEQUEST ", e)
+			//
+			// log.Printf("4. CONFIGURE REEQUEST ", e)
 
 		}).Connect(s.xu, s.appWin.Id)
 
 	xevent.ConfigureNotifyFun(
 		func(p *xgbutil.XUtil, e xevent.ConfigureNotifyEvent) {
-			log.Printf("3. Received CONFIGNOTIFICATION ", e)
+
+			if e.SequenceId() != 126 {
+				// log.Printf("3. Received CONFIGNOTIFICATION ", e)
+			}
 
 		}).Connect(s.xu, s.appWin.Id)
 
