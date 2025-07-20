@@ -1,7 +1,13 @@
 package x11ui
 
 import (
+	"bufio"
+	"bytes"
 	"image"
+	"image/color"
+	"image/jpeg"
+	"os"
+	"strings"
 
 	"github.com/BurntSushi/xgbutil/xgraphics"
 	"github.com/llgcode/draw2d/draw2dimg"
@@ -46,6 +52,49 @@ func (i *ImgButton) SetPicture(fname string) {
 	i.updateCanvas()
 }
 
+func (t *ImgButton) DrawImage(img image.Image) {
+
+	t.canvas.For(func(x, y int) xgraphics.BGRA {
+		// c := t.rawimg.At(x, y).(color.RGBA)
+		c := img.At(x, y).(color.RGBA)
+		if c == (color.RGBA{}) {
+			return xgraphics.BGRA{}
+		}
+		rgb := xgraphics.BGRA{c.B, c.G, c.R, c.A}
+		return rgb
+	})
+
+	t.canvas.XDraw()
+	t.canvas.XPaint(t.xwin.Id)
+}
+
+func (t *ImgButton) DrawJpg(jpgdata []byte) {
+	r := bytes.NewReader(jpgdata)
+	img, _ := jpeg.Decode(r)
+
+	irect := image.Rectangle{image.Point{0, 0}, image.Point{t.Width(), t.Height()}}
+
+	inset := irect.Inset(2)
+	log.Println(irect, inset)
+
+	mx := min(inset.Dx(), inset.Dy())
+	simg := xgraphics.Scale(img, mx, mx)
+	log.Print(inset, irect)
+
+	// si := t.canvas.SubImage(inset).(*xgraphics.Image)
+	// xg := xgraphics.NewConvert(t.xu, )
+	// xg.XDraw()
+	// xg.XPaintRects(t.xwin.Id, inset)
+
+	si := t.canvas.SubImage(inset).(*xgraphics.Image)
+	xgraphics.Blend(si, simg, image.Point{0, 0})
+	// si.CreatePixmap()
+	// si.XDraw()
+	// si.XPaint(t.xwin.Id)
+	t.canvas.XSurfaceSet(t.xwin.Id)
+	t.updateCanvas()
+
+}
 func min(x, y int) int {
 	if x < y {
 		return x
@@ -55,12 +104,35 @@ func min(x, y int) int {
 }
 
 func (t *ImgButton) addPicture() {
-
-	img, err := draw2dimg.LoadFromPngFile(t.fname)
-	if err != nil {
-		deBug("Background Image", err)
-
+	if t.fname == "" || t.fname == "none" || t.fname == "null" {
+		log.Println("No image file specified")
 		return
+	}
+	var img image.Image
+	var err error
+	if strings.HasSuffix(t.fname, ".png") {
+		img, err = draw2dimg.LoadFromPngFile(t.fname)
+		if err != nil {
+			deBug("Background Image", err)
+
+			return
+		}
+	}
+
+	if strings.HasSuffix(t.fname, ".jpg") || strings.HasSuffix(t.fname, ".jpeg") {
+
+		f, err := os.OpenFile(t.fname, 0, 0)
+		if err != nil {
+			deBug("Background Image", err)
+			return
+		}
+		defer f.Close()
+		b := bufio.NewReader(f)
+		img, err = jpeg.Decode(b)
+		if err != nil {
+			deBug("Background Image", err)
+			return
+		}
 	}
 
 	irect := image.Rectangle{image.Point{0, 0}, image.Point{t.Width(), t.Height()}}
