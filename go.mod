@@ -1,6 +1,6 @@
 module github.com/wiless/x11ui
 
-go 1.24.3
+go 1.20
 
 require (
 	github.com/BurntSushi/freetype-go v0.0.0-20160129220410-b763ddbfe298
