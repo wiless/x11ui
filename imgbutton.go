@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"image"
-	"image/color"
+	"image/draw"
 	"image/jpeg"
 	"os"
 	"strings"
 
+	"github.com/BurntSushi/xgbutil/xevent"
 	"github.com/BurntSushi/xgbutil/xgraphics"
 	"github.com/llgcode/draw2d/draw2dimg"
 
@@ -34,6 +35,9 @@ func NewImgButton(title string, p *Window, dims ...int) *ImgButton {
 	tbox.Widget = WidgetFactory(p, dims...)
 	tbox.fname = "hg.png"
 	tbox.init()
+	xevent.KeyPressFun(tbox.keybHandler).Connect(tbox.xu, tbox.xwin.Id)
+
+	// xevent.KeyPressFun(s.keybHandler).Connect(s.xu, s.AppWin().Id)
 
 	// tbox.Create(p, dims...)
 	// tbox.loadTheme()
@@ -54,15 +58,23 @@ func (i *ImgButton) SetPicture(fname string) {
 
 func (t *ImgButton) DrawImage(img image.Image) {
 
-	t.canvas.For(func(x, y int) xgraphics.BGRA {
-		// c := t.rawimg.At(x, y).(color.RGBA)
-		c := img.At(x, y).(color.RGBA)
-		if c == (color.RGBA{}) {
-			return xgraphics.BGRA{}
-		}
-		rgb := xgraphics.BGRA{c.B, c.G, c.R, c.A}
-		return rgb
-	})
+	// rgb := image.NewRGBA(img.Bounds())
+	rgb := t.canvas
+	draw.Draw(rgb, rgb.Bounds().Bounds(), img, image.Point{0, 0}, draw.Src)
+
+	// t.canvas.For(func(x, y int) xgraphics.BGRA {
+	// 	// c := t.rawimg.At(x, y).(color.RGBA)
+	// 	c := rgb.At(x, y)
+	// 	r, g, b, a := c.RGBA()
+
+	// 	// fmt.Printf("Color at %d, %d is %v\n", x, y, c)
+
+	// 	rgb := xgraphics.BGRA{uint8(b), uint8(g), uint8(r), uint8(a)}
+	// 	return rgb
+	// })
+
+	// ximg := xgraphics.NewConvert(X, img)
+	// t.canvas = xgraphics.NewConvert(t.xu, img)
 
 	t.canvas.XDraw()
 	t.canvas.XPaint(t.xwin.Id)
@@ -74,20 +86,22 @@ func (t *ImgButton) DrawJpg(jpgdata []byte) {
 
 	irect := image.Rectangle{image.Point{0, 0}, image.Point{t.Width(), t.Height()}}
 
-	inset := irect.Inset(2)
-	log.Println(irect, inset)
+	// inset := irect.Inset(2)
+	// log.Println(irect, inset)
 
-	mx := min(inset.Dx(), inset.Dy())
+	mx := min(irect.Dx(), irect.Dy())
 	simg := xgraphics.Scale(img, mx, mx)
-	log.Print(inset, irect)
+
+	// log.Print(inset, irect)
 
 	// si := t.canvas.SubImage(inset).(*xgraphics.Image)
 	// xg := xgraphics.NewConvert(t.xu, )
 	// xg.XDraw()
 	// xg.XPaintRects(t.xwin.Id, inset)
 
-	si := t.canvas.SubImage(inset).(*xgraphics.Image)
+	si := t.canvas.SubImage(irect).(*xgraphics.Image)
 	xgraphics.Blend(si, simg, image.Point{0, 0})
+
 	// si.CreatePixmap()
 	// si.XDraw()
 	// si.XPaint(t.xwin.Id)

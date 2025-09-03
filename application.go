@@ -101,6 +101,8 @@ func NewApplication(title string, width, height int, resizeable, fullApplication
 
 	s.keycallbacks = s.keybHandler
 	xevent.KeyPressFun(s.keybHandler).Connect(s.xu, s.AppWin().Id)
+	log.Printf("KEYBINDS %v", s.AppWin().Window.X.Keybinds)
+	// var mkey xgbutil.KeyKey
 
 	mousebind.ButtonPressFun(s.mouseHandler).Connect(s.xu, s.appWin.Id, "1", false, false)
 	// cb1 := keybind.KeyPressFun(
@@ -176,7 +178,7 @@ func (s *Application) RegisterGlobalKey(keyname string, fn Handler) bool {
 
 }
 
-//RegisterKey registers a key with a function
+// RegisterKey registers a key with a function
 func (s *Application) RegisterKey(keyname string, fn Handler) bool {
 	// log.Println("Current Root ", s.xu)
 

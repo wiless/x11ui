@@ -191,6 +191,8 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 	w.Layout = CreateLayout(0, 0, w.Width(), w.Height())
 
 	win.Map()
+	xevent.KeyPressFun(w.keybHandler).Connect(w.xu, w.xwin.Id)
+
 	return w
 }
 
@@ -273,8 +275,8 @@ func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 		finalstr = fmt.Sprint(modStr, keyStr)
 	}
 	_ = finalstr
-	// log.Println("Event code is ", e.Detail)
-	// log.Printf("%s MAPS  to Keycode %v ", finalstr, keybind.StrToKeycodes(s.xu, finalstr))
+	log.Println("Event code is ", e.Detail)
+	log.Printf("%s MAPS  to Keycode %v ", finalstr, keybind.StrToKeycodes(w.xu, finalstr))
 
 	// if fn, ok := s.KeyMaps[finalstr]; ok {
 	// 	if s.Debug {
@@ -282,7 +284,7 @@ func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	// 	}
 	// 	fn()
 	// }
-	// log.Println("Widgeyt ", finalstr)
+	log.Println("Widget ", finalstr)
 
 }
 
