@@ -497,7 +497,8 @@ func (w *Window) AnimateProperty(d time.Duration, start, stop Property) {
 
 // Animate performs a simple resize animation.
 func (w *Window) Animate(t int) {
-	tt := time.NewTicker(10 * time.Millisecond)
+	log.Println("Animate Window ", w.Title())
+	tt := time.NewTicker(1000 * time.Millisecond)
 	ww := 10
 	hh := 10
 	for range tt.C {

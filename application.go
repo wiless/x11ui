@@ -63,6 +63,7 @@ func (a *Application) Width() int {
 	return int(a.xu.Screen().WidthInPixels)
 
 }
+
 // Height returns the height of the application's screen in pixels.
 func (a *Application) Height() int {
 	return int(a.xu.Screen().HeightInPixels)
@@ -177,7 +178,6 @@ func (s *Application) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 
 }
 
-
 // RegisterGlobalKey registers a key to be handled globally by the application.
 // This will grab the keyboard, meaning no other application will receive keyboard input.
 func (s *Application) RegisterGlobalKey(keyname string, fn Handler) bool {
@@ -223,7 +223,9 @@ func (s *Application) Show() {
 func (s *Application) DefaultKeys(enable bool) {
 	if enable {
 		s.RegisterKey("q", s.Close)
+		s.RegisterKey("Q", s.Close)
 		s.RegisterKey("f", s.FullScreen)
+		s.RegisterKey("F", s.FullScreen)
 	}
 }
 
@@ -231,6 +233,7 @@ func (s *Application) DefaultKeys(enable bool) {
 func (s *Application) Close() {
 	xevent.Quit(s.xu)
 }
+
 // XWin returns the underlying *xwindow.Window of the application's main window.
 func (s *Application) XWin() *xwindow.Window {
 	return s.appWin.Window
@@ -260,9 +263,14 @@ func (s *Application) defaultWindow() {
 	w, h = s.defW, s.defH
 
 	s.appWin.Create(s.xu.RootWin(), 0, 0, w, h, xproto.CwBackPixel, 0x101010)
+	ewmh.WmAllowedActionsSet(s.xu, s.appWin.Id, []string{
+		"_NET_WM_ACTION_MOVE",
+		"_NET_WM_ACTION_RESIZE",
+		"_NET_WM_ACTION_SHADE",
+	})
 
 	// Listen for Key{Press,Release} events.
-	s.appWin.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonPress, xproto.EventMaskSubstructureNotify, xproto.EventMaskStructureNotify)
+	s.appWin.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonPress, xproto.EventMaskSubstructureNotify, xproto.EventMaskStructureNotify, xproto.EventMaskFocusChange)
 
 	// xevent.ResizeRequestFun(
 	// 	func(p *xgbutil.XUtil, e xevent.ResizeRequestEvent) {
@@ -359,6 +367,63 @@ func (s *Application) NewFloatingWindow(title string, dims ...int) *Window {
 
 	return w
 
+}
+
+func (s *Application) Restore() {
+	// _NET_WM_ACTION_SHADE
+	log.Printf("Restoring Window %s", s.appWin.Title())
+	// err := ewmh.WmStateReq(s.xu, s.appWin.Id, ewmh.StateToggle, "_NET_WM_ACTION_SHADE")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// Restore the window by setting an empty state.
+	err := ewmh.WmStateSet(s.xu, s.appWin.Id, []string{})
+	if err != nil {
+		panic(err)
+	}
+
+}
+
+// https://specifications.freedesktop.org/wm-spec/1.3/ar01s05.html
+func (s *Application) Hide() {
+	// _NET_WM_STATE_HIDDEN
+	log.Printf("Hiding Window %s", s.appWin.Title())
+
+	// Get the _NET_WM_STATE_HIDDEN atom.
+	hiddenAtom, err := ewmh.WmStateGet(s.xu, s.appWin.Id)
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("Hidden Atom is %v", hiddenAtom)
+
+	ewmh.WmNameSet(s.xu, s.appWin.Id, "Minimize Example")
+
+	// Set the WM_STATE property to hidden.
+	err = ewmh.WmStateSet(s.xu, s.appWin.Id, []string{"_NET_WM_STATE_FULLSCREEN"})
+
+	// err = ewmh.WmStateReq(s.xu, s.appWin.Id, ewmh.StateToggle, "_NET_WM_STATE_FOCUSED")
+
+	if err != nil {
+		panic(err)
+	}
+	// err := ewmh.WmStateReq(s.xu, s.appWin.Id, ewmh.StateToggle, "_NET_WM_ACTION_MINIMIZE")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+}
+
+func (s *Application) Maximize() {
+
+	err := ewmh.WmStateReq(s.xu, s.appWin.Id, ewmh.StateToggle, "_NET_WM_STATE_MAXIMIZED_HORZ")
+
+	// ewmh.WmStateGet(s.xu, s.appWin.Id)
+
+	// s.appWin.ClearAll()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (s *Application) FullScreen() {
