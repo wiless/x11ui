@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	x11ui.SetResourcePath("../../fonts/")
+	x11ui.SetResourcePath("../../fonts/", "luxisr.ttf")
 	app := x11ui.NewApplication("Test Layout", 300, 500, false, false)
 
 	app.AutoLayout(x11ui.LayoutVer, 10, 10, 300, 100)

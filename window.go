@@ -1,6 +1,7 @@
 package x11ui
 
 import (
+	"embed"
 	"image"
 	"image/color"
 	"log"
@@ -15,6 +16,11 @@ import (
 
 	"github.com/BurntSushi/freetype-go/freetype/truetype"
 
+	"fmt"
+	"path/filepath"
+
+	ttf "github.com/golang/freetype/truetype"
+
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil"
 	"github.com/BurntSushi/xgbutil/ewmh"
@@ -23,60 +29,91 @@ import (
 	"github.com/BurntSushi/xgbutil/xgraphics"
 	"github.com/BurntSushi/xgbutil/xwindow"
 
-	ttf "github.com/golang/freetype/truetype"
 	"github.com/llgcode/draw2d/draw2dimg"
 	"github.com/lucasb-eyer/go-colorful"
 )
 
-var (
-	// systemBG = colorful.Hsv(0, 0, 48) //LinearRgb(.125, .125, .125)
+//go:embed fonts/luxisr.ttf fonts/FreeMonoBold.ttf
+var content embed.FS
 
+var (
+	// systemBG is the default background color for UI elements.
 	systemBG = colorful.LinearRgb(.5, .3, .3)
-	// systemBG = colorful.Color{48, 48, 48}
+	// systemFG is the default foreground color for UI elements.
 	systemFG = colorful.LinearRgb(.5, .9, .5)
-	// The color to use for the background.
-	systemFont  *truetype.Font
+	// systemFont is the default TrueType font used for rendering text.
+	systemFont *truetype.Font
+	// systemFData holds the font data for the default system font.
+
 	systemFData = draw2d.FontData{Name: "luxi", Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleBold | draw2d.FontStyleItalic}
-	dsFont      *ttf.Font
+	// dsFont is the draw2d font instance derived from systemFData.
+	dsFont *truetype.Font
 )
 
+// init initializes the UI package, loading default resources.
 func init() {
-	fontReader, err := os.Open("FreeMonoBold.ttf")
-	if err != nil {
-		log.Printf("INIT : Load X11 Font ", err)
-	}
-	draw2d.SetFontFolder(".")
-	// Now parse the font.
-	systemFont, err = xgraphics.ParseFont(fontReader)
-	dsFont = draw2d.GetFont(systemFData)
 
-	// gc.SetFontData(draw2d.FontData{Name: "luxi", Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleBold | draw2d.FontStyleItalic})
+	err := SetResourcePath("./fonts", "")
+	// systemFData = draw2d.FontData{Name: "luxi", Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleBold | draw2d.FontStyleItalic}
 	if err != nil {
-		log.Printf("INIT : Load Draw2D Font ", err)
+		log.Printf("INIT : Load X11 Font %v", err)
+	}
+
+}
+
+// getExecutableDir returns the directory of the currently running executable.
+func getExecutableDir() (string, error) {
+	exePath, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Dir(exePath), nil
+}
+
+// Register Fonts
+func RegisterFont(path, name string) {
+	fontbytes, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("Failed to locate font file: %v", err)
+	}
+	font, err := ttf.Parse(fontbytes)
+	if err != nil {
+		log.Printf("Failed to parse font: %v", err)
+	} else {
+		draw2d.RegisterFont(draw2d.FontData{Name: name}, font)
 	}
 }
 
-func SetResourcePath(path string) {
-
-	draw2d.SetFontFolder(path)
-	fontReader, err := os.Open(path + "/./FreeMonoBold.ttf")
-	if err != nil {
-		log.Printf("Load Resource ", err)
+// SetResourcePath sets the path for UI resources like fonts
+// The path parameter is the directory containing the font files.
+func SetResourcePath(path, fontName string) error {
+	if fontName == "" {
+		fontName = "FreeMonoBold.ttf"
+		log.Printf("Setting Default Font %v", fontName)
 	}
-	// Now parse the font.
-	systemFont, err = xgraphics.ParseFont(fontReader)
-	dsFont = draw2d.GetFont(systemFData)
-
-	systemFData = draw2d.FontData{Name: "luxi", Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleBold | draw2d.FontStyleItalic}
-
-	// gc.SetFontData(draw2d.FontData{Name: "luxi", Family: draw2d.FontFamilyMono, Style: draw2d.FontStyleBold | draw2d.FontStyleItalic})
-	if err != nil {
-		log.Printf("Load Font ", err)
+	// Opening from embedded FS
+	fr, e := content.Open(filepath.Join("fonts", fontName))
+	if e != nil {
+		return fmt.Errorf("could not open embedded font %s: %w", fontName, e)
 	}
+	defer fr.Close()
+	systemFont, e = xgraphics.ParseFont(fr)
+	if e != nil {
+		return fmt.Errorf("could not parse embedded font %s: %w", fontName, e)
+	}
+	draw2d.SetFontFolder(path) // No need for a folder, fonts are embedded
+
+	// draw2d.SetFontCache(fc)
+	// dsFont = draw2d.GetFont(systemFData)
+	log.Printf("Default draw2D FontFolder %v", draw2d.GetFontFolder())
+
+	return nil
 }
 
+// OnClickFn defines the signature for advanced click handlers that receive window and coordinate information.
 type OnClickFn func(w *Window, x, y int)
 
+// Window represents an X11 window with UI capabilities.
 type Window struct {
 	//parent *xwindow.Window
 	*xwindow.Window
@@ -96,10 +133,12 @@ type Window struct {
 	ximg       *xgraphics.Image
 }
 
+// Title returns the title of the window.
 func (w *Window) Title() string {
 	return w.title
 }
 
+// Click programmatically triggers the click handlers associated with the window.
 func (w *Window) Click() {
 	if w.clkAdv != nil {
 		w.clkAdv(w, w.CenterX(), w.CenterY())
@@ -110,21 +149,26 @@ func (w *Window) Click() {
 	}
 }
 
+// OnClick sets a simple click handler for the window.
 func (w *Window) OnClick(fn func()) {
 	w.clk = fn
 	log.Println("Registering ", w.Title(), "Click to ", fn)
 }
 
+// OnClickAdv sets an advanced click handler that receives the window and click coordinates.
 func (w *Window) OnClickAdv(fn OnClickFn) {
 	w.clkAdv = fn
 	log.Println("Registering Adv Click ", w.Title(), "Click to ", fn)
 }
 
+// onHoverEvent is the event handler for when the mouse enters the window's area.
 func (w *Window) onHoverEvent(X *xgbutil.XUtil, e xevent.EnterNotifyEvent) {
 
 	w.rePaint(StateHovered)
 	log.Println("On Hover ", w.Title())
 }
+
+// onLeaveEvent is the event handler for when the mouse leaves the window's area.
 func (w *Window) onLeaveEvent(X *xgbutil.XUtil, e xevent.LeaveNotifyEvent) {
 
 	if w.isCheckBox {
@@ -139,6 +183,7 @@ func (w *Window) onLeaveEvent(X *xgbutil.XUtil, e xevent.LeaveNotifyEvent) {
 
 }
 
+// IsChecked returns the checked state of the window if it's a checkbox.
 func (w *Window) IsChecked() bool {
 
 	if w.isCheckBox {
@@ -148,6 +193,7 @@ func (w *Window) IsChecked() bool {
 
 }
 
+// Toggle changes the checked state of the window if it's a checkbox.
 func (w *Window) Toggle() {
 
 	w.wg.Lock()
@@ -157,6 +203,8 @@ func (w *Window) Toggle() {
 	w.wg.Unlock()
 
 }
+
+// mouseReleaseHandler handles the mouse button release events.
 func (w *Window) mouseReleaseHandler(X *xgbutil.XUtil, e xevent.ButtonReleaseEvent) {
 
 	switch e.Detail {
@@ -179,6 +227,7 @@ func (w *Window) mouseReleaseHandler(X *xgbutil.XUtil, e xevent.ButtonReleaseEve
 
 }
 
+// mouseHandler handles the mouse button press events.
 func (w *Window) mouseHandler(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
 
 	switch e.Detail {
@@ -200,11 +249,13 @@ func (w *Window) mouseHandler(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
 
 }
 
+// SetTitle sets the title of the window.
 func (w *Window) SetTitle(t string) {
 	w.title = t
 	ewmh.WmNameSet(w.Window.X, w.Id, w.title)
 }
 
+// SetBackGround sets the background color of the window using a colorful.Color.
 func (w *Window) SetBackGround(c colorful.Color) {
 
 	hcolor, err := strconv.ParseUint(c.Hex(), 16, 32)
@@ -215,11 +266,15 @@ func (w *Window) SetBackGround(c colorful.Color) {
 	}
 
 }
+
+// SetBGcolor sets the background color of the window using a color.Color and redraws it.
 func (w *Window) SetBGcolor(c color.Color) {
 	w.bgcolor = c
 	g := w.drawView(StateNormal)
 	w.finishPaint(g)
 }
+
+// X returns the underlying *xgbutil.XUtil connection.
 func (w *Window) X() *xgbutil.XUtil {
 	if w.Window == nil {
 		return nil
@@ -227,10 +282,12 @@ func (w *Window) X() *xgbutil.XUtil {
 	return w.Window.X
 }
 
+// SetMargin sets the margin for the window content.
 func (w *Window) SetMargin(m float64) {
 	w.margin = m
 }
 
+// drawView draws the main view of the window based on its state.
 func (w *Window) drawView(s WidgetState) *xgraphics.Image {
 	r := w.ImageRect()
 	dest := image.NewRGBA(r)
@@ -285,12 +342,15 @@ func (w *Window) drawView(s WidgetState) *xgraphics.Image {
 	return g
 }
 
+// drawBackground draws the background of the window based on its state.
 func (w *Window) drawBackground(s WidgetState) *xgraphics.Image {
 
 	r := w.ImageRect()
 	dest := image.NewRGBA(r)
 
 	gc := draw2dimg.NewGraphicContext(dest)
+
+	// fontFamily := "CustomFont" // A name you give to your font
 
 	// bg := colorful.LinearRgb(.025, .025, .025)
 
@@ -343,6 +403,7 @@ func (w *Window) drawBackground(s WidgetState) *xgraphics.Image {
 	return g
 }
 
+// drawLabel draws the window's title on the provided xgraphics.Image.
 func (w *Window) drawLabel(g *xgraphics.Image, str string, pos ...float64) {
 	// r := w.Rect.ImageRect()
 	tw, th := xgraphics.Extents(systemFont, 13, w.title)
@@ -353,19 +414,23 @@ func (w *Window) drawLabel(g *xgraphics.Image, str string, pos ...float64) {
 	g.Text(x, y, systemFG, 13, systemFont, w.title)
 }
 
+// WidgetState represents the current state of a UI widget
 type WidgetState int
 
 const (
-	// BevelJoin represents cut segments joint
+	// StateNormal indicates the normal, default state of a widget.
 	StateNormal WidgetState = iota
-	// RoundJoin represents rounded segments joint
+	// StatePressed indicates the state when a widget is being pressed (e.g., a button).
 	StatePressed
-	// MiterJoin represents peaker segments joint
+	// StateReleased indicates the state when a widget has just been released after being pressed.
 	StateReleased
+	// StateHovered indicates the state when the mouse cursor is hovering over a widget.
 	StateHovered
+	// StateSpecial indicates a special or custom state for a widget.
 	StateSpecial
 )
 
+// rePaint redraws the window with a given state, if it's a button.
 func (w *Window) rePaint(s WidgetState) {
 	if w.isButton == true {
 		g := w.drawBackground(s)
@@ -374,12 +439,15 @@ func (w *Window) rePaint(s WidgetState) {
 
 }
 
+// update applies the drawing from the xgraphics.Image to the window's surface.
 func (w *Window) update(g *xgraphics.Image, margin ...int) {
 	// w.drawLabel(g, w.title)
 	g.XSurfaceSet(w.Id)
 	g.XDraw()
 
 }
+
+// finalize paints the updated surface onto the window.
 func (w *Window) finalize(g *xgraphics.Image, margin ...int) {
 	r := w.Rect
 	if len(margin) == 2 {
@@ -390,21 +458,24 @@ func (w *Window) finalize(g *xgraphics.Image, margin ...int) {
 	g.XPaintRects(w.Id, r.ImageRect())
 }
 
+// finishPaint is a convenience function to update and finalize the window painting.
 func (w *Window) finishPaint(g *xgraphics.Image, margin ...int) {
 	w.update(g, margin...)
 	w.finalize(g, margin...)
 }
 
+// Property represents geometric properties of a window for animation.
 type Property struct {
 	X, Y int
 	W, H int
 }
 
+// Step is a placeholder for a step function in animation. (Currently a stub)
 func (p *Property) Step(dp Property) {
 
 }
 
-// return the distance from the src property
+// Delta returns the difference between two Property structs.
 func (p Property) Delta(src Property) (dp Property) {
 	dp.X = p.X - src.X
 	dp.Y = p.Y - src.Y
@@ -414,14 +485,17 @@ func (p Property) Delta(src Property) (dp Property) {
 	return dp
 }
 
+// Scale scales the property values. (Currently a stub)
 func (p *Property) Scale(steps int) {
 
 }
 
+// AnimateProperty animates a window's properties over a duration. (Currently a stub)
 func (w *Window) AnimateProperty(d time.Duration, start, stop Property) {
 
 }
 
+// Animate performs a simple resize animation.
 func (w *Window) Animate(t int) {
 	tt := time.NewTicker(10 * time.Millisecond)
 	ww := 10
@@ -442,6 +516,7 @@ func (w *Window) Animate(t int) {
 
 }
 
+// Draw handles expose events to redraw parts of the window.
 func (w *Window) Draw(X *xgbutil.XUtil, e xevent.ExposeEvent) {
 	if w.title == "graph" {
 		log.Println(w.Title(), "======== need to draw ========", e.String())
@@ -466,6 +541,7 @@ func (w *Window) Draw(X *xgbutil.XUtil, e xevent.ExposeEvent) {
 
 }
 
+// Filler is a function used to fill the window background with a pattern.
 func (w *Window) Filler(x, y int) xgraphics.BGRA {
 	margin := 1
 	// borderPixel := 1
@@ -490,6 +566,7 @@ func (w *Window) Filler(x, y int) xgraphics.BGRA {
 	// }
 }
 
+// newWindow creates a new basic window as a child of p.
 func newWindow(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	w := new(Window)
 	w.title = t
@@ -563,6 +640,7 @@ func newWindow(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	return w
 }
 
+// Plot draws a random graph on the window. Used for demonstration.
 func (w *Window) Plot() {
 	_, e := w.Parent()
 	if e != nil {
@@ -594,6 +672,7 @@ func (w *Window) Plot() {
 
 }
 
+// RandomGraph generates an image with a random sine wave graph.
 func RandomGraph(r image.Rectangle) *image.RGBA {
 	dest := image.NewRGBA(r)
 	gc := draw2dimg.NewGraphicContext(dest)
@@ -615,15 +694,18 @@ func RandomGraph(r image.Rectangle) *image.RGBA {
 	return dest
 }
 
+// PaintOnce draws the window's background and label a single time.
 func (w *Window) PaintOnce() {
 	g := w.drawBackground(StateNormal)
 	w.finishPaint(g)
 }
 
+// XWin returns the underlying *xwindow.Window.
 func (w *Window) XWin() *xwindow.Window {
 	return w.Window
 }
 
+// XProtoWin returns the X protocol window ID.
 func (w *Window) XProtoWin() xproto.Window {
 	return w.Window.Id
 }
@@ -676,6 +758,7 @@ func xNewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	return w
 }
 
+// CreateRawImage creates a new RGBA image associated with the window for direct drawing.
 func (w *Window) CreateRawImage(x, y, ww, hh int) *image.RGBA {
 	w.rawimage = image.NewRGBA(image.Rect(x, y, ww, hh))
 
@@ -686,10 +769,12 @@ func (w *Window) CreateRawImage(x, y, ww, hh int) *image.RGBA {
 	return w.rawimage
 }
 
+// RawImage returns the raw image buffer of the window.
 func (w Window) RawImage() *image.RGBA {
 	return w.rawimage
 }
 
+// UpdatePlot updates the window content from an image.
 func (w *Window) UpdatePlot(img image.Image) {
 
 	// log.Printf("Bounds ", img.Bounds(), "window rects", w.Rect)
@@ -705,6 +790,8 @@ func (w *Window) UpdatePlot(img image.Image) {
 	w.ximg.XDraw()
 
 }
+
+// ReDrawImage redraws the window from its raw image buffer.
 func (w *Window) ReDrawImage() {
 	if w.rawimage == nil {
 		log.Print("Create Raw Image .. first")

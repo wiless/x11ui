@@ -6,6 +6,9 @@ import (
 	"image/color"
 	"log"
 
+	_ "embed"
+
+	"github.com/llgcode/draw2d"
 	"github.com/llgcode/draw2d/draw2dkit"
 
 	"github.com/BurntSushi/xgbutil"
@@ -13,6 +16,9 @@ import (
 	"github.com/llgcode/draw2d/draw2dimg"
 	"github.com/lucasb-eyer/go-colorful"
 )
+
+/// // go:embed fonts/Pacifico-Regular.ttf
+// var fontPacifico []byte
 
 type ProgressBar struct {
 	p  *Window //ParentWindow
@@ -195,23 +201,20 @@ func (p *ProgressBar) drawBackground(s WidgetState) {
 		// }
 	}
 
-	// gc.SetFillColor(color.RGBA{130, 120, 30, 110})
-	// gc.SetStrokeColor(color.RGBA{30, 120, 130, 110})
-	// draw2dkit.Circle(gc, 250, 10, 30)
-	// gc.FillStroke()
+	// Now set the font for the graphic context by its registered name.
+	gc.SetFontData(draw2d.FontData{Name: "Font-Awesome"})
+	// }
 
-	// c := color.RGBA{200, 200, 200, 255}
-	// gc.SetStrokeColor(image.White)
-	// c := color.RGBA{200, 200, 200, 255}
+	gc.SetFontSize(14)
 
 	gc.SetFillColor(p.txtColor)
+	gc.FillStringAt("\uf095 \uf012 \uf0c2 \uf14e \uf1eb \uf016 \uf015 \ue012", 50, 40)
 	gc.SetLineWidth(0)
 	cx, cy := r.Center()
 	str := fmt.Sprintf(p.fmtString, (p.val * p.dispScaler))
-	x0, y0, w0, h0 := gc.GetStringBounds(str)
-	// log.Println("Required dimension for string ", x0, y0, w0, h0, cx, cy)
-	tx, ty := float64(cx)-w0/2.0-x0, float64(cy)-h0/2.0-y0/2.0
-	// gc.StrokeStringAt(str, tx, ty)
+	left, top, right, bottom := gc.GetStringBounds(str)
+	w0, h0 := right-left, bottom-top
+	tx, ty := float64(cx)-w0/2.0, float64(cy)+h0/2.0
 	gc.FillStringAt(str, tx, ty)
 	// gc.FillStroke()
 	gc.Close()

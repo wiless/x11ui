@@ -10,7 +10,7 @@ var sview *x11ui.ScrollView
 
 func main() {
 
-	x11ui.SetResourcePath("../../fonts/")
+	x11ui.SetResourcePath("../../fonts/", "")
 	app := x11ui.NewApp(false, 500, 500)
 	w := app.NewChildWindow("Something ", 50, 50, 350, 350)
 

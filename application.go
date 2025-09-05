@@ -18,15 +18,22 @@ import (
 	"github.com/BurntSushi/xgbutil/xwindow"
 )
 
+// LayoutDirection specifies the direction for automatic widget layout.
 type LayoutDirection int
 
 const (
+	// LayoutNone indicates no automatic layout direction.
 	LayoutNone LayoutDirection = iota
+	// LayoutHor indicates horizontal layout.
 	LayoutHor
+	// LayoutVer indicates vertical layout.
 	LayoutVer
 )
 
+// Handler is a function type for event handlers.
 type Handler func()
+
+// Application represents an X11 application, managing windows and events.
 type Application struct {
 	xu                 *xgbutil.XUtil
 	appWin             *Window
@@ -46,18 +53,22 @@ type Application struct {
 	hspacing, vspacing int
 }
 
+// X returns the underlying *xgbutil.XUtil connection for the application.
 func (a *Application) X() *xgbutil.XUtil {
 	return a.xu
 }
 
+// Width returns the width of the application's screen in pixels.
 func (a *Application) Width() int {
 	return int(a.xu.Screen().WidthInPixels)
 
 }
+// Height returns the height of the application's screen in pixels.
 func (a *Application) Height() int {
 	return int(a.xu.Screen().HeightInPixels)
 }
 
+// AutoLayout sets the automatic layout direction for new child windows.
 func (a *Application) AutoLayout(l LayoutDirection, newpos ...int) {
 	a.l = l
 	if len(newpos) > 0 {
@@ -71,11 +82,13 @@ func (a *Application) AutoLayout(l LayoutDirection, newpos ...int) {
 	}
 }
 
+// NewApp creates a new application with a default title and specified dimensions.
 func NewApp(fullscreen bool, width, height int) *Application {
 
 	return NewApplication("X11 Application", width, height, true, fullscreen)
 }
 
+// NewApplication creates a new X11 application with the given title, dimensions, and resize/fullscreen options.
 func NewApplication(title string, width, height int, resizeable, fullApplication bool) *Application {
 	s := Application{w: width, h: height, title: title, Dark: false}
 	s.KeyMaps = make(map[string]Handler)
@@ -117,10 +130,12 @@ func NewApplication(title string, width, height int, resizeable, fullApplication
 	return &s
 }
 
+// AppWin returns the main application window.
 func (a *Application) AppWin() *Window {
 	return a.appWin
 }
 
+// mouseHandler processes mouse button press events for the application.
 func (s *Application) mouseHandler(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
 	// log.Println("Application ", s.appWin.Title(), " clicked at ", e.EventX, e.EventY)
 
@@ -133,6 +148,7 @@ func (s *Application) mouseHandler(X *xgbutil.XUtil, e xevent.ButtonPressEvent) 
 
 }
 
+// keybHandler processes keyboard press events for the application.
 func (s *Application) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	if s.xu != X {
 		log.Println("\n I am not the write handler !!")
@@ -161,6 +177,9 @@ func (s *Application) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 
 }
 
+
+// RegisterGlobalKey registers a key to be handled globally by the application.
+// This will grab the keyboard, meaning no other application will receive keyboard input.
 func (s *Application) RegisterGlobalKey(keyname string, fn Handler) bool {
 
 	if s.RegisterKey(keyname, fn) {
@@ -178,7 +197,7 @@ func (s *Application) RegisterGlobalKey(keyname string, fn Handler) bool {
 
 }
 
-// RegisterKey registers a key with a function
+// RegisterKey registers a key with a function to be handled by the application.
 func (s *Application) RegisterKey(keyname string, fn Handler) bool {
 	// log.Println("Current Root ", s.xu)
 
@@ -193,12 +212,14 @@ func (s *Application) RegisterKey(keyname string, fn Handler) bool {
 	return true
 }
 
+// Show starts the application's event loop and displays the main window.
 func (s *Application) Show() {
 
 	xevent.Main(s.xu)
 
 }
 
+// DefaultKeys enables or disables default keybindings for the application (e.g., 'q' for close, 'f' for fullscreen).
 func (s *Application) DefaultKeys(enable bool) {
 	if enable {
 		s.RegisterKey("q", s.Close)
@@ -206,13 +227,16 @@ func (s *Application) DefaultKeys(enable bool) {
 	}
 }
 
+// Close terminates the application.
 func (s *Application) Close() {
 	xevent.Quit(s.xu)
 }
+// XWin returns the underlying *xwindow.Window of the application's main window.
 func (s *Application) XWin() *xwindow.Window {
 	return s.appWin.Window
 }
 
+// Empty returns an empty Window associated with the application's root window.
 func (s *Application) Empty() *Window {
 	var w Window
 	w.Id = s.xu.RootWin()

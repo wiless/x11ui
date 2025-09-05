@@ -10,8 +10,12 @@ import (
 
 func main() {
 	fmt.Printf("Hello")
-	x11ui.SetResourcePath("../../fonts/")
-	app := x11ui.NewApplication("Hello World", 800, 600, false, false)
+	x11ui.RegisterFont("./fonts/Pacifico-Regular.ttf", "Pacifico-Regular")
+	x11ui.RegisterFont("./fonts/fawesome.ttf", "Font-Awesome")
+	// x11ui.RegisterFont("./fonts/fontawesome-solid.ttf", "Font-Awesome")
+
+	// x11ui.SetResourcePath("./fonts/", "Pacifico-Regular.ttf")
+	app := x11ui.NewApplication("\uf095 Hello World", 800, 600, false, false)
 	s := NewSlider("Simulation", app.AppWin(), 10, 10, 620, 50)
 
 	s.SetBackGroundColor(color.RGBA{0x10, 0x30, 0x10, 0xff})
@@ -21,6 +25,7 @@ func main() {
 	s.SetStepSize(5)
 	s.SetValue(0)
 	s.SetFmtString("%2.0f mins")
+	app.SetDefaultKeys()
 
 	// x11ui.DrawDummy(w, x11ui.StateNormal)
 	// r := color.RGBA{125, 0, 0, 250}

@@ -11,7 +11,7 @@ import (
 var l *x11ui.Label
 
 func main() {
-	x11ui.SetResourcePath("../../fonts/")
+	x11ui.SetResourcePath("../../fonts/", "")
 	ap := x11ui.NewApplication("Hello World", 500, 500, false, false)
 	child := ap.NewChildWindow("Hello world", 0, 0, 300, 100)
 	child.SetBGcolor(color.RGBA{100, 0, 0, 30})

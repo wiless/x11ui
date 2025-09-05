@@ -9,7 +9,7 @@ import (
 
 func main() {
 
-	x11ui.SetResourcePath("../../fonts/")
+	x11ui.SetResourcePath("../../fonts/", "")
 	app := x11ui.NewApplication("Hello World", 800, 600, false, false)
 	// var p x11ui.TextBox
 	x11ui.DEBUG_LEVEL = 2
