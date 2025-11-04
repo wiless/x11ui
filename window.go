@@ -40,7 +40,7 @@ var (
 	// systemBG is the default background color for UI elements.
 	systemBG = colorful.LinearRgb(.5, .3, .3)
 	// systemFG is the default foreground color for UI elements.
-	systemFG = colorful.LinearRgb(.5, .9, .5)
+	systemFG = colorful.LinearRgb(.8, .8, .8)
 	// systemFont is the default TrueType font used for rendering text.
 	systemFont *truetype.Font
 	// systemFData holds the font data for the default system font.
@@ -120,17 +120,22 @@ type Window struct {
 	clkAdv OnClickFn
 	clk    func()
 	Rect
-	title      string
-	background colorful.Color
-	bgcolor    color.Color
-	view       *xwindow.Window
-	isButton   bool
-	isCheckBox bool
-	checkState bool
-	wg         sync.Mutex
-	margin     float64
-	rawimage   *image.RGBA
-	ximg       *xgraphics.Image
+	prevRect         Rect
+	onSizeChange     func(w, h int)
+	onMove           func(x, y int)
+	onMoveComplete   func(x, y int)
+	onResizeComplete func(w, h int)
+	title            string
+	background       colorful.Color
+	bgcolor          color.Color
+	view             *xwindow.Window
+	isButton         bool
+	isCheckBox       bool
+	checkState       bool
+	wg               sync.Mutex
+	margin           float64
+	rawimage         *image.RGBA
+	ximg             *xgraphics.Image
 }
 
 // Title returns the title of the window.
@@ -161,10 +166,52 @@ func (w *Window) OnClickAdv(fn OnClickFn) {
 	log.Println("Registering Adv Click ", w.Title(), "Click to ", fn)
 }
 
+func (w *Window) Show() {
+	w.Map()
+}
+
+func (w *Window) Hide() {
+	w.Unmap()
+}
+
+func (w *Window) ToggleVisibility() {
+	attrs, err := xproto.GetWindowAttributes(w.X().Conn(), w.Id).Reply()
+	if err != nil {
+		// Or handle the error more gracefully
+		log.Println("Could not get window attributes:", err)
+		return
+	}
+	if attrs.MapState == xproto.MapStateUnmapped {
+		w.Map()
+	} else {
+		w.Unmap()
+	}
+}
+
+func (w *Window) OnSizeChange(fn func(w, h int)) {
+	w.onSizeChange = fn
+}
+
+func (w *Window) OnMove(fn func(x, y int)) {
+	w.onMove = fn
+}
+
+func (w *Window) OnMoveComplete(fn func(x, y int)) {
+	w.onMoveComplete = fn
+}
+
+func (w *Window) OnResizeComplete(fn func(w, h int)) {
+	w.onResizeComplete = fn
+}
+
 // onHoverEvent is the event handler for when the mouse enters the window's area.
 func (w *Window) onHoverEvent(X *xgbutil.XUtil, e xevent.EnterNotifyEvent) {
 
-	w.rePaint(StateHovered)
+	if w.isCheckBox && w.checkState {
+		w.rePaint(StateHoveredChecked)
+	} else {
+		w.rePaint(StateHovered)
+	}
 	log.Println("On Hover ", w.Title())
 }
 
@@ -209,7 +256,14 @@ func (w *Window) mouseReleaseHandler(X *xgbutil.XUtil, e xevent.ButtonReleaseEve
 
 	switch e.Detail {
 	case 1: // left click
-		if !w.isCheckBox {
+		if w.isCheckBox {
+			w.Toggle()
+			if w.checkState {
+				w.rePaint(StateSpecial)
+			} else {
+				w.rePaint(StateNormal)
+			}
+		} else {
 			w.rePaint(StateReleased)
 		}
 
@@ -235,13 +289,6 @@ func (w *Window) mouseHandler(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
 		w.rePaint(StatePressed)
 		if w.clk == nil {
 			log.Println(w.Title(), " Clicked() ", e.String())
-		} else {
-			// log.Println("Window CallBack ", w.clk)
-			go w.clk()
-
-		}
-		if w.clkAdv != nil {
-			w.clkAdv(w, int(e.EventX), int(e.EventY))
 		}
 	default:
 		// log.Println(w.Title(), "Some Button Clicked() ", e.Detail)
@@ -270,8 +317,8 @@ func (w *Window) SetBackGround(c colorful.Color) {
 // SetBGcolor sets the background color of the window using a color.Color and redraws it.
 func (w *Window) SetBGcolor(c color.Color) {
 	w.bgcolor = c
-	g := w.drawView(StateNormal)
-	w.finishPaint(g)
+	w.drawView(StateNormal)
+	w.finishPaint(w.ximg)
 }
 
 // X returns the underlying *xgbutil.XUtil connection.
@@ -288,9 +335,11 @@ func (w *Window) SetMargin(m float64) {
 }
 
 // drawView draws the main view of the window based on its state.
-func (w *Window) drawView(s WidgetState) *xgraphics.Image {
+func (w *Window) drawView(s WidgetState) {
 	r := w.ImageRect()
+	// log.Printf("drawView: ImageRect: %+v", r)
 	dest := image.NewRGBA(r)
+	// log.Printf("drawView: dest (image.RGBA) is nil: %t", dest == nil)
 	gc := draw2dimg.NewGraphicContext(dest)
 
 	// bg := colorful.LinearRgb(.025, .025, .025)
@@ -337,16 +386,20 @@ func (w *Window) drawView(s WidgetState) *xgraphics.Image {
 	gc.FillStroke()
 	gc.Close()
 
-	g := xgraphics.NewConvert(w.X(), dest)
-	w.drawLabel(g, w.title, margin, margin)
-	return g
+	w.rawimage = dest
+	// log.Printf("drawView: w.X() is nil: %t", w.X() == nil)
+	w.ximg = xgraphics.NewConvert(w.X(), dest)
+	// log.Printf("drawView: w.ximg is nil after NewConvert: %t", w.ximg == nil)
+	w.drawLabel(w.ximg, w.title, margin, margin)
 }
 
 // drawBackground draws the background of the window based on its state.
-func (w *Window) drawBackground(s WidgetState) *xgraphics.Image {
+func (w *Window) drawBackground(s WidgetState) {
 
 	r := w.ImageRect()
+	// log.Printf("drawBackground: ImageRect: %+v", r)
 	dest := image.NewRGBA(r)
+	// log.Printf("drawBackground: dest (image.RGBA) is nil: %t", dest == nil)
 
 	gc := draw2dimg.NewGraphicContext(dest)
 
@@ -356,16 +409,19 @@ func (w *Window) drawBackground(s WidgetState) *xgraphics.Image {
 
 	switch s {
 	case StateNormal, StateReleased:
-		gc.SetFillColor(color.RGBA{0x20, 0x20, 0x20, 20})
+		gc.SetFillColor(color.RGBA{0x33, 0x33, 0x33, 255})
 		gc.SetStrokeColor(systemFG)
 	case StateHovered:
-		gc.SetFillColor(color.RGBA{0x35, 0x20, 0x20, 20})
+		gc.SetFillColor(color.RGBA{0x4d, 0x4d, 0x4d, 255})
 		gc.SetStrokeColor(systemFG)
 	case StatePressed:
-		gc.SetFillColor(color.RGBA{0x20, 0x30, 0x20, 20})
+		gc.SetFillColor(color.RGBA{0x1a, 0x1a, 0x1a, 255})
 		gc.SetStrokeColor(systemFG)
 	case StateSpecial:
-		gc.SetFillColor(color.RGBA{0x20, 0x80, 0x20, 0x80})
+		gc.SetFillColor(color.RGBA{0x33, 0x66, 0x33, 255})
+		gc.SetStrokeColor(systemFG)
+	case StateHoveredChecked:
+		gc.SetFillColor(color.RGBA{0x4d, 0x80, 0x4d, 255})
 		gc.SetStrokeColor(systemFG)
 	}
 
@@ -398,9 +454,11 @@ func (w *Window) drawBackground(s WidgetState) *xgraphics.Image {
 	gc.Close()
 	// }
 
-	g := xgraphics.NewConvert(w.X(), dest)
-	w.drawLabel(g, w.title)
-	return g
+	w.rawimage = dest
+	// log.Printf("drawBackground: w.X() is nil: %t", w.X() == nil)
+	w.ximg = xgraphics.NewConvert(w.X(), dest)
+	// log.Printf("drawBackground: w.ximg is nil after NewConvert: %t", w.ximg == nil)
+	w.drawLabel(w.ximg, w.title)
 }
 
 // drawLabel draws the window's title on the provided xgraphics.Image.
@@ -412,6 +470,81 @@ func (w *Window) drawLabel(g *xgraphics.Image, str string, pos ...float64) {
 		x, y = int(pos[0]), int(pos[1])
 	}
 	g.Text(x, y, systemFG, 13, systemFont, w.title)
+}
+
+type Container struct {
+	Window // Embed the existing Window struct directly
+
+	layoutDirection LayoutDirection // Horizontal or Vertical
+
+	children []*Window // List of child widgets/windows
+
+	hspacing, vspacing int
+
+	hpadding, vpadding int
+
+	pvsChildRect Rect // To keep track of the previous child's position for cascading
+
+}
+
+func (c *Container) AddWidget(widget *Window) {
+	// Check if widget is already added
+	for _, child := range c.children {
+		if child == widget {
+			return // Already there
+		}
+	}
+	c.children = append(c.children, widget)
+	c.RelayoutChildren() // Relayout and redraw all children
+}
+func (c *Container) RelayoutChildren() {
+	c.ClearAll() // Clear the container's background
+
+	// Previous child rect, in absolute coordinates. Start with a zero-width rect at the container's top-left.
+	prevRect := Rect{c.Rect.X, c.Rect.Y, 0, 0}
+	if c.layoutDirection == LayoutHor {
+		prevRect.Width = -c.hspacing
+	} else {
+		prevRect.Height = -c.vspacing
+	}
+
+	for _, child := range c.children {
+		var newRect Rect // absolute coordinates
+		newRect.Width = child.Rect.Width
+		newRect.Height = child.Rect.Height
+
+		switch c.layoutDirection {
+		case LayoutHor:
+			newRect.X = prevRect.X + prevRect.Width + c.hspacing
+			newRect.Y = prevRect.Y
+			newRect.Height = c.Rect.Height // Resize height to container's height
+		case LayoutVer:
+			newRect.X = prevRect.X
+			newRect.Y = prevRect.Y + prevRect.Height + c.vspacing
+			newRect.Width = c.Rect.Width // Resize width to container's width
+		default:
+			newRect.X = c.Rect.X + child.Rect.X
+			newRect.Y = c.Rect.Y + child.Rect.Y
+		}
+
+		paddedRect := newRect.WithPadding(c.hpadding, c.vpadding)
+		child.Move(paddedRect.X - c.Rect.X, paddedRect.Y - c.Rect.Y)
+		if c.layoutDirection == LayoutVer {
+			child.Resize(paddedRect.Width, child.Rect.Height)
+		} else if c.layoutDirection == LayoutHor {
+			child.Resize(child.Rect.Width, paddedRect.Height)
+		} else {
+			child.Resize(paddedRect.Width, paddedRect.Height)
+		}
+		prevRect = newRect
+		child.PaintOnce()
+	}
+	c.pvsChildRect = prevRect
+}
+
+func (c *Container) SetSpacing(dx, dy int) {
+	c.hspacing, c.vspacing = dx, dy
+	c.RelayoutChildren() // Relayout after changing spacing
 }
 
 // WidgetState represents the current state of a UI widget
@@ -428,13 +561,14 @@ const (
 	StateHovered
 	// StateSpecial indicates a special or custom state for a widget.
 	StateSpecial
+	StateHoveredChecked
 )
 
 // rePaint redraws the window with a given state, if it's a button.
 func (w *Window) rePaint(s WidgetState) {
 	if w.isButton == true {
-		g := w.drawBackground(s)
-		w.finishPaint(g)
+		w.drawBackground(s)
+		w.finishPaint(w.ximg)
 	}
 
 }
@@ -519,27 +653,10 @@ func (w *Window) Animate(t int) {
 
 // Draw handles expose events to redraw parts of the window.
 func (w *Window) Draw(X *xgbutil.XUtil, e xevent.ExposeEvent) {
-	if w.title == "graph" {
-		log.Println(w.Title(), "======== need to draw ========", e.String())
-		//	w.rePaint()
-	}
-	// draw.Draw(X.Screen().	, r, src, sp, op)
-	// c.PolyRectangle(win, fg, rectangles)
-	// c.ImageText8(win, bg, 20, 20, strBytes)
-
-	// if w.title == "graph" {
-	// 	var graph *image.RGBA
-
-	// 	r := w.Rect.ImageRect()
-	// 	graph = RandomGraph(r)
-	// 	g := xgraphics.NewConvert(w.X(), graph)
-
-	// 	g.XPaint(w.view.Id)
-	// 	// g.XPaintRects(w.view.Id, 0, 0)
-	// 	// g.XSurfaceSet(w.view.Id)
-
-	// }
-
+	log.Printf("Draw: Expose event received for window '%s' (ID: %d)", w.Title(), w.Id)
+	// For now, simply repaint the entire window on expose events.
+	// More optimized drawing could be implemented later (e.g., only redraw exposed region).
+	w.PaintOnce()
 }
 
 // Filler is a function used to fill the window background with a pattern.
@@ -587,6 +704,7 @@ func newWindow(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	// mask := xproto.GcForeground | xproto.GcGraphicsExposures
 	// values := []uint32{s.BlackPixel, 0}
 	win.Create(parent, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0xfffff)
+	win.Map()
 
 	// win.Create(parent, r.X, r.Y, r.Width, r.Height, mask, values...)
 	if err != nil {
@@ -605,8 +723,14 @@ func newWindow(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	//}
 
 	w.Rect = r
+	w.prevRect = r
 
 	w.Window = win
+	win.Map()
+
+	// It's important that the map comes after setting WMGracefulClose, since
+	// the WM isn't obliged to watch updates to the WM_PROTOCOLS property.
+
 	if p == nil {
 		// xevent.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "1", false, true)
 		xevent.ButtonPressFun(w.mouseHandler).Connect(X, win.Id)
@@ -617,24 +741,6 @@ func newWindow(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 		xevent.LeaveNotifyFun(w.onLeaveEvent).Connect(X, win.Id)
 		mousebind.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "2", false, true)
 	}
-	// xevent.ExposeFun(w.Draw).Connect(X, win.Id)
-
-	win.WMGracefulClose(
-		func(w *xwindow.Window) {
-			// Detach all event handlers.
-			// This should always be done when a window can no longer
-			// receive events.
-			log.Printf("Window destroyed %d ", w.Id)
-			xevent.Detach(w.X, w.Id)
-			mousebind.Detach(w.X, w.Id)
-			w.Destroy()
-			// Exit if there are no more windows left.
-
-		})
-
-	// It's important that the map comes after setting WMGracefulClose, since
-	// the WM isn't obliged to watch updates to the WM_PROTOCOLS property.
-	win.Map()
 	w.PaintOnce()
 
 	// xevent.ButtonPressFun(w.mouseHandler).Connect(X, win.Id)
@@ -697,8 +803,8 @@ func RandomGraph(r image.Rectangle) *image.RGBA {
 
 // PaintOnce draws the window's background and label a single time.
 func (w *Window) PaintOnce() {
-	g := w.drawBackground(StateNormal)
-	w.finishPaint(g)
+	w.drawBackground(StateNormal)
+	w.finishPaint(w.ximg)
 }
 
 // XWin returns the underlying *xwindow.Window.
@@ -709,6 +815,82 @@ func (w *Window) XWin() *xwindow.Window {
 // XProtoWin returns the X protocol window ID.
 func (w *Window) XProtoWin() xproto.Window {
 	return w.Window.Id
+}
+
+func (w *Window) Reparent(newParent xproto.Window, x, y int) error {
+	err := xproto.ReparentWindow(w.X().Conn(), w.Id, newParent, int16(x), int16(y)).Check()
+	if err != nil {
+		return fmt.Errorf("failed to reparent window: %w", err)
+	}
+	// Update the internal Rect to reflect the new position relative to the new parent
+	w.Rect.X = x
+	w.Rect.Y = y
+	return nil
+}
+
+func (w *Window) Move(x, y int) {
+	w.Window.Move(x, y)
+	w.Rect.X = x
+	w.Rect.Y = y
+}
+
+func (w *Window) Resize(width, height int) {
+	w.Window.Resize(width, height)
+	w.Rect.Width = width
+	w.Rect.Height = height
+}
+
+func (w *Window) Align(alignment Alignment) {
+	parent, err := w.Parent()
+	if err != nil {
+		log.Printf("Error getting parent window for alignment: %v", err)
+		return
+	}
+	parentGeom, err := parent.Geometry()
+	if err != nil {
+		log.Printf("Error getting parent geometry for alignment: %v", err)
+		return
+	}
+
+	log.Printf("Parent Geometry: X=%d, Y=%d, Width=%d, Height=%d", parentGeom.X(), parentGeom.Y(), parentGeom.Width(), parentGeom.Height())
+
+	windowGeom := w.Rect
+	log.Printf("Window Geometry: X=%d, Y=%d, Width=%d, Height=%d", windowGeom.X, windowGeom.Y, windowGeom.Width, windowGeom.Height)
+
+	newX, newY := windowGeom.X, windowGeom.Y
+
+	switch alignment {
+	case AlignTopLeft:
+		newX = parentGeom.X()
+		newY = parentGeom.Y()
+	case AlignTopCenter:
+		newX = parentGeom.X() + (parentGeom.Width()-windowGeom.Width)/2
+		newY = parentGeom.Y()
+	case AlignTopRight:
+		newX = parentGeom.X() + parentGeom.Width() - windowGeom.Width
+		newY = parentGeom.Y()
+	case AlignMiddleLeft:
+		newX = parentGeom.X()
+		newY = parentGeom.Y() + (parentGeom.Height()-windowGeom.Height)/2
+	case AlignCenter:
+		newX = parentGeom.X() + (parentGeom.Width()-windowGeom.Width)/2
+		newY = parentGeom.Y() + (parentGeom.Height()-windowGeom.Height)/2
+	case AlignMiddleRight:
+		newX = parentGeom.X() + parentGeom.Width() - windowGeom.Width
+		newY = parentGeom.Y() + (parentGeom.Height()-windowGeom.Height)/2
+	case AlignBottomLeft:
+		newX = parentGeom.X()
+		newY = parentGeom.Y() + parentGeom.Height() - windowGeom.Height
+	case AlignBottomCenter:
+		newX = parentGeom.X() + (parentGeom.Width()-windowGeom.Width)/2
+		newY = parentGeom.Y() + parentGeom.Height() - windowGeom.Height
+	case AlignBottomRight:
+		newX = parentGeom.X() + parentGeom.Width() - windowGeom.Width
+		newY = parentGeom.Y() + parentGeom.Height() - windowGeom.Height
+	}
+
+	log.Printf("Aligning %s to %v: Calculated newX=%d, newY=%d", w.Title(), alignment, newX, newY)
+	w.Move(newX-parentGeom.X(), newY-parentGeom.Y())
 }
 
 func xNewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {

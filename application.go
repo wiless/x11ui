@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/lucasb-eyer/go-colorful"
 
@@ -51,6 +52,9 @@ type Application struct {
 	pvsChildRect       Rect
 	defW, defH         int
 	hspacing, vspacing int
+	hpadding, vpadding int
+	moveTimer          *time.Timer
+	resizeTimer        *time.Timer
 }
 
 // X returns the underlying *xgbutil.XUtil connection for the application.
@@ -82,6 +86,34 @@ func (a *Application) AutoLayout(l LayoutDirection, newpos ...int) {
 		}
 	}
 }
+
+// calculateChildrenBoundingBox calculates the bounding box of all child windows.
+// func (a *Application) calculateChildrenBoundingBox() Rect {
+// 	if len(a.childrenWindows) == 0 {
+// 		return Rect{}
+// 	}
+
+// 	minX, minY := a.childrenWindows[0].Rect.X, a.childrenWindows[0].Rect.Y
+// 	maxX, maxY := a.childrenWindows[0].Rect.X+a.childrenWindows[0].Rect.Width,
+// 		a.childrenWindows[0].Rect.Y+a.childrenWindows[0].Rect.Height
+
+// 	for _, child := range a.childrenWindows {
+// 		childRect := child.Rect
+// 		if childRect.X < minX {
+// 			minX = childRect.X
+// 		}
+// 		if childRect.Y < minY {
+// 			minY = childRect.Y
+// 		}
+// 		if childRect.X+childRect.Width > maxX {
+// 			maxX = childRect.X + childRect.Width
+// 		}
+// 		if childRect.Y+childRect.Height > maxY {
+// 			maxY = childRect.Y + childRect.Height
+// 		}
+// 	}
+// 	return Rect{minX, minY, maxX - minX, maxY - minY}
+// }
 
 // NewApp creates a new application with a default title and specified dimensions.
 func NewApp(fullscreen bool, width, height int) *Application {
@@ -147,6 +179,10 @@ func (s *Application) mouseHandler(X *xgbutil.XUtil, e xevent.ButtonPressEvent) 
 		s.appWin.clk()
 	}
 
+}
+
+func (s *Application) mouseReleaseHandler(X *xgbutil.XUtil, e xevent.ButtonReleaseEvent) {
+	// No-op, as isDragging is removed
 }
 
 // keybHandler processes keyboard press events for the application.
@@ -263,6 +299,7 @@ func (s *Application) defaultWindow() {
 	w, h = s.defW, s.defH
 
 	s.appWin.Create(s.xu.RootWin(), 0, 0, w, h, xproto.CwBackPixel, 0x101010)
+	s.appWin.prevRect = s.appWin.Rect
 	ewmh.WmAllowedActionsSet(s.xu, s.appWin.Id, []string{
 		"_NET_WM_ACTION_MOVE",
 		"_NET_WM_ACTION_RESIZE",
@@ -287,11 +324,47 @@ func (s *Application) defaultWindow() {
 
 	xevent.ConfigureNotifyFun(
 		func(p *xgbutil.XUtil, e xevent.ConfigureNotifyEvent) {
+			currentRect := Rect{int(e.X), int(e.Y), int(e.Width), int(e.Height)}
 
-			if e.SequenceId() != 126 {
-				// log.Printf("3. Received CONFIGNOTIFICATION ", e)
+			// Check for size change
+			sizeChanged := currentRect.Width != s.appWin.prevRect.Width || currentRect.Height != s.appWin.prevRect.Height
+			if sizeChanged {
+				if s.appWin.onSizeChange != nil {
+					s.appWin.onSizeChange(currentRect.Width, currentRect.Height)
+				}
+				// Reset or start the resize timer
+				if s.resizeTimer != nil {
+					s.resizeTimer.Stop()
+				}
+				s.resizeTimer = time.AfterFunc(100*time.Millisecond, func() {
+					// log.Println("Window resize complete")
+					if s.appWin.onResizeComplete != nil {
+						s.appWin.onResizeComplete(currentRect.Width, currentRect.Height)
+					}
+				})
 			}
 
+			// Check for position change
+			positionChanged := currentRect.X != s.appWin.prevRect.X || currentRect.Y != s.appWin.prevRect.Y
+			if positionChanged {
+				// log.Println("Window is moving")
+				if s.appWin.onMove != nil {
+					s.appWin.onMove(currentRect.X, currentRect.Y)
+				}
+
+				// Reset or start the move timer
+				if s.moveTimer != nil {
+					s.moveTimer.Stop()
+				}
+				s.moveTimer = time.AfterFunc(100*time.Millisecond, func() {
+					// log.Println("Window move complete")
+					if s.appWin.onMoveComplete != nil {
+						s.appWin.onMoveComplete(currentRect.X, currentRect.Y)
+					}
+				})
+			}
+
+			s.appWin.prevRect = currentRect
 		}).Connect(s.xu, s.appWin.Id)
 
 	// Make this window close gracefully.
@@ -429,7 +502,7 @@ func (s *Application) Maximize() {
 func (s *Application) FullScreen() {
 
 	err := ewmh.WmStateReq(s.xu, s.appWin.Id, ewmh.StateToggle, "_NET_WM_STATE_FULLSCREEN")
-
+	// err := ewmh.WmStateReq(s.xu, s.appWin.Id, ewmh.StateAdd, "_NET_WM_STATE_HIDDEN")
 	// ewmh.WmStateGet(s.xu, s.appWin.Id)
 
 	// s.appWin.ClearAll()
@@ -526,65 +599,99 @@ func (s *Application) newWindow(p xproto.Window, r Rect) *Window {
 	return w
 }
 
-func (a *Application) AddButton(caption string, geo ...int) *Window {
-	switch a.l {
-	case LayoutVer:
-		a.pvsChildRect.ShiftDown(a.pvsChildRect.Height + a.vspacing)
-		obj := NewButton(caption, a.AppWin(), a.pvsChildRect.array()...)
-		return obj
-	case LayoutHor:
-		a.pvsChildRect.ShiftRight(a.pvsChildRect.Width + a.hspacing)
-		obj := NewButton(caption, a.AppWin(), a.pvsChildRect.array()...)
-		return obj
-	default:
-		obj := NewButton(caption, a.AppWin(), geo...)
-		a.pvsChildRect = obj.Rect
-		return obj
+func (a *Application) NewContainer(layout LayoutDirection, dims ...int) *Container {
+	tempWindow := a.NewChildWindow("", dims...)
+
+	container := &Container{
+		Window:          *tempWindow, // Dereference the pointer to assign to the embedded value
+		layoutDirection: layout,
+		children:        make([]*Window, 0),
+		hspacing:        a.hspacing, // Default spacing
+		vspacing:        a.vspacing,
+
+		pvsChildRect: tempWindow.Rect, // Use the Rect from the temporary window
 	}
 
+	container.SetBGcolor(color.RGBA{125, 125, 0, 0}) // Fully transparent black
+
+	container.OnResizeComplete(func(w, h int) {
+		container.RelayoutChildren()
+	})
+
+	return container
+}
+
+func (a *Application) AddButton(caption string, geo ...int) *Window {
+	var r Rect
+	if len(geo) > 0 {
+		r = newRect(geo...)
+	} else {
+		switch a.l {
+		case LayoutVer:
+			a.pvsChildRect.ShiftDown(a.pvsChildRect.Height + a.vspacing)
+			r = a.pvsChildRect
+		case LayoutHor:
+			a.pvsChildRect.ShiftRight(a.pvsChildRect.Width + a.hspacing)
+			r = a.pvsChildRect
+		}
+	}
+
+	paddedRect := r.WithPadding(a.hpadding, a.vpadding)
+	obj := NewButton(caption, a.AppWin(), paddedRect.array()...)
+	a.pvsChildRect = r
+	return obj
 }
 
 func (a *Application) AddToggleBtn(caption string, geo ...int) *Window {
-	switch a.l {
-	case LayoutVer:
-		a.pvsChildRect.ShiftDown(a.pvsChildRect.Height + a.vspacing)
-		obj := NewToggleButton(caption, a.AppWin(), a.pvsChildRect.array()...)
-		return obj
-	case LayoutHor:
-		a.pvsChildRect.ShiftRight(a.pvsChildRect.Width + a.hspacing)
-		obj := NewToggleButton(caption, a.AppWin(), a.pvsChildRect.array()...)
-		return obj
-	default:
-		obj := NewToggleButton(caption, a.AppWin(), geo...)
-		a.pvsChildRect = obj.Rect
-		return obj
+	var r Rect
+	if len(geo) > 0 {
+		r = newRect(geo...)
+	} else {
+		switch a.l {
+		case LayoutVer:
+			a.pvsChildRect.ShiftDown(a.pvsChildRect.Height + a.vspacing)
+			r = a.pvsChildRect
+		case LayoutHor:
+			a.pvsChildRect.ShiftRight(a.pvsChildRect.Width + a.hspacing)
+			r = a.pvsChildRect
+		}
 	}
 
+	paddedRect := r.WithPadding(a.hpadding, a.vpadding)
+	obj := NewToggleButton(caption, a.AppWin(), paddedRect.array()...)
+	a.pvsChildRect = r
+	return obj
 }
 func (a *Application) SetLayoutSpacing(dx, dy int) {
 	a.hspacing, a.vspacing = dx, dy
 }
+
+func (a *Application) SetLayoutPadding(dx, dy int) {
+	a.hpadding, a.vpadding = dx, dy
+}
 func (a *Application) NewChildWindow(title string, dims ...int) *Window {
-	var w *Window
-	switch a.l {
-	case LayoutVer:
-		a.pvsChildRect.ShiftDown(a.pvsChildRect.Height + a.vspacing)
-		w = a.newWindow(a.appWin.Id, a.pvsChildRect)
-
-	case LayoutHor:
-		a.pvsChildRect.ShiftRight(a.pvsChildRect.Width + a.hspacing)
-		w = a.newWindow(a.appWin.Id, a.pvsChildRect)
-
-	default:
-		w = a.newWindow(a.appWin.Id, newRect(dims...))
-
-		a.pvsChildRect = w.Rect
-
+	var r Rect
+	if len(dims) > 0 {
+		r = newRect(dims...)
+	} else {
+		switch a.l {
+		case LayoutVer:
+			a.pvsChildRect.ShiftDown(a.pvsChildRect.Height + a.vspacing)
+			r = a.pvsChildRect
+		case LayoutHor:
+			a.pvsChildRect.ShiftRight(a.pvsChildRect.Width + a.hspacing)
+			r = a.pvsChildRect
+		}
 	}
+
+	paddedRect := r.WithPadding(a.hpadding, a.vpadding)
+	w := a.newWindow(a.appWin.Id, paddedRect)
+	a.pvsChildRect = r
+
 	// w.SetBackGround(colorful.LinearRgb(0, 0, 0))
 	w.bgcolor = color.RGBA{100, 100, 100, 255}
-	g := w.drawView(StateNormal)
-	w.finishPaint(g)
+	w.drawView(StateNormal)
+	w.finishPaint(w.ximg)
 	// w.SetTitle(title)
 	w.Detach()
 	return w
