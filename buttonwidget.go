@@ -84,6 +84,7 @@ func (bw *ButtonWidget) init() {
 	bw.gc.SetFontSize(bw.fsize)
 	bw.updateButtonAppearance() // Initial draw
 	bw.LeaveFn = bw.handleLeave
+	bw.HoverFn = bw.handleHover
 	bw.ClkFn = bw.handleButtonClick
 	bw.releaseFn = bw.handleButtonRelease
 	mousebind.ButtonReleaseFun(bw.releaseFn).Connect(bw.xu, bw.xwin.Id, "1", false, true)
