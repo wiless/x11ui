@@ -13,7 +13,7 @@ import (
 
 // ButtonWidget represents a clickable button UI element.
 type ButtonWidget struct {
-	*Window
+	*Widget
 	text        string
 	isToggle    bool
 	checked     bool
@@ -87,7 +87,6 @@ func (bw *ButtonWidget) init() {
 	bw.ClkFn = bw.handleButtonClick
 	bw.releaseFn = bw.handleButtonRelease
 	mousebind.ButtonReleaseFun(bw.releaseFn).Connect(bw.xu, bw.xwin.Id, "1", false, true)
-	bw.AttachHandlers() // Explicitly call AttachHandlers
 }
 
 func (bw *ButtonWidget) LoadTheme(str string) {

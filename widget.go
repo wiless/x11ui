@@ -325,10 +325,11 @@ func (w *Widget) AttachHandlers() *Widget {
 	// mousebind.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "1", false, true)
 	// mousebind.ButtonReleaseFun(w.mouseReleaseHandler).Connect(X, win.Id, "1", false, true)
 
-	xevent.EnterNotifyFun(w.onHoverEvent).Connect(w.xu, w.xwin.Id)
-	xevent.LeaveNotifyFun(w.onLeaveEvent).Connect(w.xu, w.xwin.Id)
+		mousebind.EnterFun(w.onHoverEvent).Connect(w.xu, w.xwin.Id)
 
-	mousebind.ButtonPressFun(w.mouseClick).Connect(w.xu, w.xwin.Id, "1", false, true)
+		mousebind.LeaveFun(w.onLeaveEvent).Connect(w.xu, w.xwin.Id)
+
+		mousebind.ButtonPressFun(w.mouseClick).Connect(w.xu, w.xwin.Id, "1", false, true)
 	return w
 }
 
