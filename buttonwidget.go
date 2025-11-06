@@ -13,7 +13,7 @@ import (
 
 // ButtonWidget represents a clickable button UI element.
 type ButtonWidget struct {
-	*Widget
+	*Window
 	text        string
 	isToggle    bool
 	checked     bool

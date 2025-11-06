@@ -173,6 +173,7 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("WidgetFactory: Created window with ID: %d", win.Id)
 	win.Create(w.pwinID, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0) // Here r.X and r.Y are used
 	win.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonRelease, xproto.EventMaskExposure, xproto.EventMaskEnterWindow, xproto.EventMaskLeaveWindow)
 
