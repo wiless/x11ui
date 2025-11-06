@@ -378,13 +378,10 @@ func (w *Widget) drawBackground() {
 }
 
 func (w *Widget) onLeaveEvent(X *xgbutil.XUtil, e xevent.LeaveNotifyEvent) {
-	log.Println("onLeaveEvent triggered for widget:", w.title)
 	if w.EnableHover {
 		if w.LeaveFn != nil {
-			log.Println("LeaveFn is not nil, calling it.")
 			w.LeaveFn()
 		} else {
-			log.Println("LeaveFn is nil, using default behavior.")
 			// Default behavior if no LeaveFn is set
 			w.drawBorder(StateNormal)
 			w.updateCanvas()

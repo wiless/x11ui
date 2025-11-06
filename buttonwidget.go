@@ -83,10 +83,11 @@ func (bw *ButtonWidget) init() {
 	bw.LoadTheme("") // Load default theme colors
 	bw.gc.SetFontSize(bw.fsize)
 	bw.updateButtonAppearance() // Initial draw
-	bw.HoverFn = bw.handleHover
+	bw.LeaveFn = bw.handleLeave
 	bw.ClkFn = bw.handleButtonClick
 	bw.releaseFn = bw.handleButtonRelease
 	mousebind.ButtonReleaseFun(bw.releaseFn).Connect(bw.xu, bw.xwin.Id, "1", false, true)
+	bw.AttachHandlers() // Explicitly call AttachHandlers
 }
 
 func (bw *ButtonWidget) LoadTheme(str string) {
@@ -101,7 +102,6 @@ func (bw *ButtonWidget) handleHover() {
 }
 
 func (bw *ButtonWidget) handleLeave() {
-	log.Println("handleLeave called, setting state to StateNormal")
 	bw.state = StateNormal
 	bw.updateButtonAppearance()
 }
@@ -133,7 +133,6 @@ func (bw *ButtonWidget) updateButtonAppearance() {
 	bw.normalColor = CurrentTheme.BarColor
 	bw.hoverColor = baseColor.BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped()
 	bw.pressColor = baseColor.BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped()
-	log.Printf("ButtonWidget Colors: normal=%v, hover=%v", bw.normalColor, bw.hoverColor)
 
 	// Dynamically determine text color based on background luminance
 	rVal, gVal, bVal, _ := baseColor.RGBA()
