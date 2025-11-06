@@ -478,6 +478,7 @@ func (c *Container) AddWidget(widget WindowProvider) {
 	c.RelayoutChildren() // Relayout and redraw all children
 }
 func (c *Container) RelayoutChildren() {
+	log.Printf("RelayoutChildren: Container dimensions: Width=%d, Height=%d", c.Rect.Width, c.Rect.Height)
 	c.ClearAll() // Clear the container's background
 
 	// Previous child rect, in absolute coordinates. Start with a zero-width rect at the container's top-left.
