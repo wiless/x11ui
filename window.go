@@ -390,7 +390,6 @@ func (w *Window) drawBackground(s WidgetState) {
 		strokeColor = toRGBA(CurrentTheme.LineColor)
 	case StateHovered:
 		fillColor = toRGBA(toColorful(CurrentTheme.BarColor).BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped())
-		log.Printf("Window Hover Color: %v", fillColor)
 		strokeColor = toRGBA(CurrentTheme.LineColor)
 	case StatePressed:
 		fillColor = toRGBA(toColorful(CurrentTheme.BarColor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped())

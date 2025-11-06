@@ -138,20 +138,19 @@ func (bw *ButtonWidget) updateButtonAppearance() {
 	}
 	bw.txtColor = bw.textColor
 
-	log.Printf("ButtonWidget Hover Color: %v", bw.hoverColor)
 	// Determine background color based on state
 	var currentBgColor color.Color
 	var currentLineColor color.Color
 
 	switch bw.state {
 	case StateNormal:
-		currentBgColor = bw.normalColor
+		currentBgColor = toRGBA(bw.normalColor)
 		currentLineColor = CurrentTheme.LineColor
 	case StateHovered:
-		currentBgColor = bw.hoverColor
+		currentBgColor = toRGBA(bw.hoverColor)
 		currentLineColor = CurrentTheme.LineColor
 	case StatePressed:
-		currentBgColor = bw.pressColor
+		currentBgColor = toRGBA(bw.pressColor)
 		currentLineColor = CurrentTheme.LineColor
 	case StateChecked: // For toggle buttons when checked
 		currentBgColor = CurrentTheme.CheckboxCheckedColor // Use theme color for checked state
