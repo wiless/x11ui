@@ -101,6 +101,11 @@ func (w *Widget) SetTextColor(c color.Color) {
 	w.txtColor = c
 }
 
+// InvertColors swaps the background and text colors of the widget.
+func (w *Widget) InvertColors() {
+	w.bgColor, w.txtColor = w.txtColor, w.bgColor
+}
+
 func (ww *Widget) CreateChild(dims ...int) *Widget {
 	var w *Widget
 	var err error

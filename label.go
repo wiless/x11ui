@@ -91,6 +91,11 @@ func (l *Label) SetTextColor(c color.Color) {
 	l.updateLabel(StateNormal)
 }
 
+func (l *Label) InvertColors() {
+	l.Widget.InvertColors()
+	l.updateLabel(StateNormal)
+}
+
 func (t *Label) updateLabel(state WidgetState) {
 	// log.Println("updateing text")
 	// W, H := float64(t.Width()), float64(t.Height())

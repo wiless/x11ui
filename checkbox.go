@@ -6,7 +6,6 @@ import (
 	"image/color"
 	"log"
 
-	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil/xgraphics"
 
 	"github.com/llgcode/draw2d/draw2dkit"
@@ -47,38 +46,45 @@ func (c *CheckBox) init() {
 	// c.registerHandlers()
 
 	c.cb.Region = NewRegion(Rect{0, 0, 50, 50})
-	c.cb.BG = color.RGBA{155, 0, 0, 255}
-	c.cb.TC = color.RGBA{0, 255, 0, 255}
+	c.cb.BG = CurrentTheme.CheckboxUncheckedColor
+	c.cb.TC = CurrentTheme.TextColor
 
 	c.txttb.Region = NewRegion(Rect{0, 0, 150, 50})
 	c.txttb.SetText("Transmit Pilot ?")
-	c.txttb.BG = color.RGBA{155, 0, 0, 255}
-	c.txttb.TC = color.RGBA{0, 255, 0, 255}
+	c.txttb.BG = CurrentTheme.BackgroundColor
+	c.txttb.TC = CurrentTheme.TextColor
 
 	c.cb.filename = "hg.png"
 	c.txttb.filename = "Well_003.png"
-	// c.Layout.ox = midpoint.X
-	// c.Layout.oy = midpoint.Y
 	midpoint := image.Point{c.Width()/2 - 75, c.Height()/2 - 25}
-	// log.Println("midpoint", midpoint, r.CenterX(), r.CenterY())
-	_, _ = midpoint.X, midpoint.Y
 	c.Layout = CreateLayout(midpoint.X, midpoint.Y, 150, 50)
-	// c.AddRegionAt(tr, 0, 0+midpoint.Y).AddRegionAt(big, tr.Width, 0+midpoint.Y)
 	c.AddRegionAt(c.cb, 0, 0).AddRegionAt(c.txttb, c.cb.Width, 0)
-	// c.xwin.Detach()
 	c.HoverFn = c.onHover
 	c.HandlerFunctions.LeaveFn = c.onLeave
 	c.HandlerFunctions.ClkFn = c.onClick
+	c.updateColorsBasedOnState()
 	// c.Layout=new LayoutNewLayout(w, x0, y0)
 
 }
 
 func (c *CheckBox) onClick() {
+	c.state = !c.state
+	c.updateColorsBasedOnState()
+	c.RePaint()
+}
 
-	ximg, err := xgraphics.NewDrawable(c.xu, xproto.Drawable(c.xwin.Id))
-	ximg.SavePng("something.png")
+func (c *CheckBox) updateColorsBasedOnState() {
+	if c.state {
+		c.cb.BG = CurrentTheme.CheckboxCheckedColor
+	} else {
+		c.cb.BG = CurrentTheme.CheckboxUncheckedColor
+	}
+}
 
-	log.Println("File saved", err)
+func (c *CheckBox) SetChecked(checked bool) {
+	c.state = checked
+	c.updateColorsBasedOnState()
+	c.RePaint()
 }
 
 type boxRegion struct {
@@ -90,6 +96,8 @@ type boxRegion struct {
 	state      bool
 	filename   string
 	Caption    string
+	BG         color.Color // Change to color.Color
+	TC         color.Color // Change to color.Color
 }
 
 func (b boxRegion) GetRegion() *Region {
@@ -123,54 +131,24 @@ func (c *CheckBox) CopyPaste(r image.Rectangle) {
 
 func (c *CheckBox) onLeave() {
 	fmt.Printf("Leaving ")
-	// r := GetIRect(50, 30)
-	// img := image.NewRGBA(r)
-	// gc := draw2dimg.NewGraphicContext(img)
-	// irect := GetIRect(50, 50)
 	gc := c.gc
-	gc.SetFillColor(color.RGBA{0, 255, 10, 0})
-	gc.SetStrokeColor(color.RGBA{20, 20, 255, 100})
+	gc.SetFillColor(CurrentTheme.BackgroundColor)
+	gc.SetStrokeColor(CurrentTheme.LineColor)
 	draw2dkit.Rectangle(gc, 0, 0, 50, 30)
 	gc.FillStroke()
 	gc.Close()
-	// c.CopyPaste(r)
-	// xgraphics.Blend(c.canvas, img, image.Point{0, 0})
-
-	// xg := xgraphics.NewConvert(c.xu, img)
-	// xg.
-	// xg.XDraw()
-	// xg.XPaintRects(c.xwin.Id, irect)
-
-	// for x := 0; x < 30; x++ {
-	// 	c.canvas.Set(x, x, color.RGBA{255, 0, 0, 255})
-	// }
-	// c.canvas.XDraw()
-	// c.canvas.XPaint(c.xwin.Id)
 }
 func (c *CheckBox) onHover() {
 	fmt.Printf("Entering")
 	r := GetIRect(50, 30)
-	// img := image.NewRGBA(r)
-	// gc := draw2dimg.NewGraphicContext(img)
 	gc := c.gc
-	gc.SetFillColor(color.RGBA{0, 0, 0, 0})
-	gc.SetStrokeColor(color.RGBA{245, 0, 0, 0})
-	// draw2dkit.Rectangle(gc, 0, 0, 50, 30)
-	// gc.FillStroke()
+	gc.SetFillColor(CurrentTheme.ForegroundColor)
+	gc.SetStrokeColor(CurrentTheme.LineColor)
 	draw2dkit.Circle(gc, 20, 20, 20)
 	gc.FillStroke()
 	gc.Close()
 
-	// c.canvas.XDraw()
-	// c.canvas.XPaint(c.xwin.Id)
-
 	c.CopyPaste(r)
-
-	// for x := 0; x < 30; x++ {
-	// 	c.canvas.Set(x, x, color.RGBA{255, 0, 0, 255})
-	// }
-	// c.canvas.XDraw()
-	// c.canvas.XPaint(c.xwin.Id)
 }
 
 func (b boxRegion) PaintRegion() *image.RGBA {
@@ -225,77 +203,7 @@ func (b boxRegion) PaintRegion() *image.RGBA {
 		gc.StrokeStringAt(b.Caption, float64(px), float64(py))
 	}
 
-	StrokeBorderImg(img, color.RGBA{200, 0, 0, 255}, 0, 4)
-	// WW := float64(r.Width)
-	// HH := float64(r.Height)
-
-	// Draw Background
-	// gc.SetLineWidth(1)
-	// // gc.SetFillColor(b.BG)
-	// gc.SetStrokeColor(b.FG)
-	// draw2dkit.Rectangle(gc, 0, 0, WW, HH)
-	// gc.Stroke()
-
-	// Show Pvs Current
-	// gc.SetFontSize(12)
-	// ft := gc.GetFontData()
-	// ft.Style = draw2d.FontStyleNormal
-	// gc.SetFontData(ft)
-	// gc.SetFillColor(color.RGBA{0x05, 0x8D, 0xBA, 0xff})
-	// str := fmt.Sprintf("%+ 8.2f", b.PvsCurrent)
-	// x0, y0, tw, th := gc.GetStringBounds(str)
-	// log.Println("Current", x0, y0, tw, th)
-	// oldtw, oldth := tw, th
-	// x, y := WW-b.Margin-tw, b.Margin-th
-	// gc.FillStringAt(str, x, y)
-
-	// // Show Current at 0,0
-	// gc.SetFontSize(34)
-	// ft = gc.GetFontData()
-	// ft.Style = draw2d.FontStyleBold
-	// gc.SetFontData(ft)
-	// gc.SetFillColor(b.TC)
-	// str = fmt.Sprintf("%+ 8.2f", b.Current)
-	// x0, y0, tw, th = gc.GetStringBounds(str)
-	// log.Println("Current", x0, y0, tw, th)
-	// oldtw, oldth = tw, th
-	// x, y = WW-b.Margin-tw, HH/2-th/2
-	// gc.FillStringAt(str, x, y)
-
-	// // Show Units
-	// gc.SetFontSize(10)
-	// // Light Color
-	// gc.SetFillColor(color.RGBA{0x05, 0x8D, 0xBA, 0xff})
-	// str = fmt.Sprintf("mA")
-	// x0, y0, tw, th = gc.GetStringBounds(str)
-	// log.Println("Bounds mA", x0, y0, tw, th)
-	// x += (oldtw - tw)
-	// y += (oldth + th - y0)
-	// oldtw, oldth = tw, th
-	// gc.FillStringAt(str, x, y)
-
-	// //Show Columns Unit
-	// gc.SetFontSize(9)
-	// ft.Style = draw2d.FontStyleNormal
-	// gc.SetFontData(ft)
-	// gc.SetFillColor(color.RGBA{0x05, 0x8D, 0xBA, 0xff})
-	// str = fmt.Sprintf("  Columns")
-	// x0, y0, tw, th = gc.GetStringBounds(str)
-	// x, y = b.Margin-x0, HH-b.Margin-th-y0
-	// oldtw, oldth = tw, th
-	// gc.FillStringAt(str, x, y)
-
-	// // Show Column Value
-	// gc.SetFontSize(15)
-	// gc.SetFillColor(b.TC)
-	// str = fmt.Sprintf("%+ 8.2f", b.Coulomb)
-	// x0, y0, tw, th = gc.GetStringBounds(str)
-	// x, y = b.Margin-x0, HH-b.Margin-th-oldth+y0
-	// gc.FillStringAt(str, x, y)
-
-	// vec := vlib.RandUFVec(40)
-	// rec := .Rect{r.Width / 4, 50, 200, 50}
-	// MiniGraph(gc, vec, rec, 0, 1)
+	StrokeBorderImg(img, CurrentTheme.CheckboxBorderColor, 0, 4)
 
 	gc.Close()
 	return img

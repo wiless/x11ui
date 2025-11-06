@@ -10,7 +10,7 @@ require (
 	github.com/BurntSushi/xgbutil v0.0.0-20190907113008-ad855c713046
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/llgcode/draw2d v0.0.0-20240627062922-0ed1ff131195
-	github.com/lucasb-eyer/go-colorful v1.2.0
+	github.com/lucasb-eyer/go-colorful v1.3.0
 	github.com/wiless/multitimer v0.0.0-20170626063034-e3641c81409f
 	github.com/wiless/vlib v1.0.0-alpha
 )

@@ -14,8 +14,8 @@ github.com/llgcode/draw2d v0.0.0-20240627062922-0ed1ff131195 h1:Vdz2cBh5Fw2MYHWi
 github.com/llgcode/draw2d v0.0.0-20240627062922-0ed1ff131195/go.mod h1:1Vk0LDW6jG5cGc2D9RQUxHaE0vYhTvIwSo9mOL6K4/U=
 github.com/llgcode/ps v0.0.0-20210114104736-f4b0c5d1e02e h1:ZAvbj5hI/G/EbAYAcj4yCXUNiFKefEhH0qfImDDD0/8=
 github.com/llgcode/ps v0.0.0-20210114104736-f4b0c5d1e02e/go.mod h1:1l8ky+Ew27CMX29uG+a2hNOKpeNYEQjjtiALiBlFQbY=
-github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69Aj6K7nkY=
-github.com/lucasb-eyer/go-colorful v1.2.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
+github.com/lucasb-eyer/go-colorful v1.3.0 h1:2/yBRLdWBZKrf7gB40FoiKfAWYQ0lqNcbuQwVHXptag=
+github.com/lucasb-eyer/go-colorful v1.3.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/wiless/multitimer v0.0.0-20170626063034-e3641c81409f h1:z3ipv13wG7LnSyS8D/MoVrbAIkWEplHfbrmtsnWJGvU=
