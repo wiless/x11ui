@@ -378,34 +378,15 @@ func (w *Widget) drawBackground() {
 }
 
 func (w *Widget) onLeaveEvent(X *xgbutil.XUtil, e xevent.LeaveNotifyEvent) {
-
 	if w.EnableHover {
-		if w.LeaveFn == nil {
-			w.drawBorder(StateNormal)
-			// w.canvas := xgraphics.NewConvert(X, w.rawimg)
-			w.updateCanvas()
-		} else {
-			// w.drawBorder(StateHovered)
-			// // w.canvas := xgraphics.NewConvert(X, w.rawimg)
-			// w.updateCanvas()
-			// // calling the set hover vunf
+		if w.LeaveFn != nil {
 			w.LeaveFn()
+		} else {
+			// Default behavior if no LeaveFn is set
+			w.drawBorder(StateNormal)
+			w.updateCanvas()
 		}
 	}
-
-	// log.Println(w.title, " Left Hover")
-	w.drawBorder(StateNormal)
-	// w.canvas := xgraphics.NewConvert(X, w.rawimg)
-	// w.canvas.For(func(x, y int) xgraphics.BGRA {
-	// 	c := w.rawimg.At(x, y).(color.RGBA)
-	// 	return xgraphics.BGRA{c.B, c.G, c.R, c.A}
-	// })
-	w.updateCanvas()
-
-	// w.canvas.XSurfaceSet(w.xwin.Id)
-	// w.canvas.XDraw()
-	// w.canvas.XPaint(w.xwin.Id)
-
 }
 
 func GetIRect(w, h int) image.Rectangle {
