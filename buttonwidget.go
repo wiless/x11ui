@@ -101,6 +101,7 @@ func (bw *ButtonWidget) handleHover() {
 }
 
 func (bw *ButtonWidget) handleLeave() {
+	log.Println("handleLeave called, setting state to StateNormal")
 	bw.state = StateNormal
 	bw.updateButtonAppearance()
 }

@@ -378,6 +378,7 @@ func (w *Widget) drawBackground() {
 }
 
 func (w *Widget) onLeaveEvent(X *xgbutil.XUtil, e xevent.LeaveNotifyEvent) {
+	log.Println("onLeaveEvent triggered for widget:", w.title)
 	if w.EnableHover {
 		if w.LeaveFn != nil {
 			w.LeaveFn()
