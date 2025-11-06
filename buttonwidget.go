@@ -184,6 +184,7 @@ func (bw *ButtonWidget) updateButtonAppearance() {
 	tw, th := xgraphics.Extents(systemFont, bw.fsize, bw.text)
 	xpos, ypos := (bw.Width()-tw)/2, (bw.Height()-th)/2
 
+	log.Printf("ButtonWidget.updateButtonAppearance: Drawing text '%s' at (%d, %d) with color %v and font size %f. Current BgColor: %v, TextColor: %v, State: %v", bw.text, xpos, ypos, bw.textColor, bw.fsize, bw.bgColor, bw.txtColor, bw.state)
 	bw.canvas.Text(xpos, ypos, bw.textColor, bw.fsize, systemFont, bw.text)
 
 	// Draw border
