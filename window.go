@@ -337,45 +337,29 @@ func (w *Window) SetMargin(m float64) {
 // drawView draws the main view of the window based on its state.
 func (w *Window) drawView(s WidgetState) {
 	r := w.ImageRect()
-	// log.Printf("drawView: ImageRect: %+v", r)
 	dest := image.NewRGBA(r)
-	// log.Printf("drawView: dest (image.RGBA) is nil: %t", dest == nil)
 	gc := draw2dimg.NewGraphicContext(dest)
 
-	// bg := colorful.LinearRgb(.025, .025, .025)
 	switch s {
 	case StateNormal, StateReleased:
 		gc.SetFillColor(w.bgcolor)
-		gc.SetStrokeColor(systemFG)
+		gc.SetStrokeColor(CurrentTheme.LineColor)
 	case StateHovered:
-		gc.SetFillColor(color.RGBA{0x35, 0x20, 0x20, 0x20})
-		gc.SetStrokeColor(systemFG)
+		gc.SetFillColor(toColorful(w.bgcolor).BlendLuvLCh(toColorful(CurrentTheme.ForegroundColor), 0.5).Clamped())
+		gc.SetStrokeColor(CurrentTheme.LineColor)
 	case StatePressed:
-		gc.SetFillColor(color.RGBA{0x20, 0x30, 0x20, 0x20})
-		gc.SetStrokeColor(systemFG)
+		gc.SetFillColor(toColorful(w.bgcolor).BlendLuvLCh(toColorful(CurrentTheme.BackgroundColor), 0.5).Clamped())
+		gc.SetStrokeColor(CurrentTheme.LineColor)
 	case StateSpecial:
-		gc.SetFillColor(color.RGBA{0x20, 0x80, 0x20, 0x80})
-		gc.SetStrokeColor(systemFG)
+		gc.SetFillColor(toColorful(w.bgcolor).BlendLuvLCh(toColorful(CurrentTheme.CheckboxCheckedColor), 0.5).Clamped())
+		gc.SetStrokeColor(CurrentTheme.LineColor)
 	}
 
 	gc.SetLineWidth(0)
 
-	// gc.SetLineJoin(draw2d.RoundJoin)
-	// gc.Rotate(math.Pi / 4.0)
-
 	ww, hh := float64(w.Width), float64(w.Height)
 	margin := w.margin
 	ww, hh = ww-margin, hh-margin
-	// cx, cy := ww/2, hh/2
-	// Draw a closed shape
-
-	// if xpressed {
-	// 	gc.QuadCurveTo(cx, cy, ww, margin)
-	// 	gc.QuadCurveTo(cx, cy, ww, hh)
-	// 	gc.QuadCurveTo(cx, cy, margin, hh)
-	// 	gc.QuadCurveTo(cx, cy, margin, margin)
-	// 	// gc.QuadCurveTo(ww-5*margin, hh-5*margin, ww, hh)
-	// } else {
 
 	gc.BeginPath()
 	gc.MoveTo(margin, margin)
@@ -387,9 +371,7 @@ func (w *Window) drawView(s WidgetState) {
 	gc.Close()
 
 	w.rawimage = dest
-	// log.Printf("drawView: w.X() is nil: %t", w.X() == nil)
 	w.ximg = xgraphics.NewConvert(w.X(), dest)
-	// log.Printf("drawView: w.ximg is nil after NewConvert: %t", w.ximg == nil)
 	w.drawLabel(w.ximg, w.title, margin, margin)
 }
 
@@ -397,47 +379,30 @@ func (w *Window) drawView(s WidgetState) {
 func (w *Window) drawBackground(s WidgetState) {
 
 	r := w.ImageRect()
-	// log.Printf("drawBackground: ImageRect: %+v", r)
 	dest := image.NewRGBA(r)
-	// log.Printf("drawBackground: dest (image.RGBA) is nil: %t", dest == nil)
-
 	gc := draw2dimg.NewGraphicContext(dest)
-
-	// fontFamily := "CustomFont" // A name you give to your font
-
-	// bg := colorful.LinearRgb(.025, .025, .025)
 
 	switch s {
 	case StateNormal, StateReleased:
-		gc.SetFillColor(color.RGBA{0x33, 0x33, 0x33, 255})
-		gc.SetStrokeColor(systemFG)
+		gc.SetFillColor(CurrentTheme.BackgroundColor)
+		gc.SetStrokeColor(CurrentTheme.LineColor)
 	case StateHovered:
-		gc.SetFillColor(color.RGBA{0x4d, 0x4d, 0x4d, 255})
-		gc.SetStrokeColor(systemFG)
+		gc.SetFillColor(toColorful(CurrentTheme.BackgroundColor).BlendLuvLCh(toColorful(CurrentTheme.ForegroundColor), 0.5).Clamped())
+		gc.SetStrokeColor(CurrentTheme.LineColor)
 	case StatePressed:
-		gc.SetFillColor(color.RGBA{0x1a, 0x1a, 0x1a, 255})
-		gc.SetStrokeColor(systemFG)
+		gc.SetFillColor(toColorful(CurrentTheme.BackgroundColor).BlendLuvLCh(toColorful(CurrentTheme.BarColor), 0.5).Clamped())
+		gc.SetStrokeColor(CurrentTheme.LineColor)
 	case StateSpecial:
-		gc.SetFillColor(color.RGBA{0x33, 0x66, 0x33, 255})
-		gc.SetStrokeColor(systemFG)
+		gc.SetFillColor(CurrentTheme.CheckboxCheckedColor)
+		gc.SetStrokeColor(CurrentTheme.LineColor)
 	case StateHoveredChecked:
-		gc.SetFillColor(color.RGBA{0x4d, 0x80, 0x4d, 255})
-		gc.SetStrokeColor(systemFG)
+		gc.SetFillColor(toColorful(CurrentTheme.CheckboxCheckedColor).BlendLuvLCh(toColorful(CurrentTheme.ForegroundColor), 0.5).Clamped())
+		gc.SetStrokeColor(CurrentTheme.LineColor)
 	}
 
 	ww, hh := float64(w.Width), float64(w.Height)
 	margin := w.margin
 	ww, hh = ww-margin, hh-margin
-	// cx, cy := ww/2, hh/2
-	// Draw a closed shape
-
-	// if xpressed {
-	// 	gc.QuadCurveTo(cx, cy, ww, margin)
-	// 	gc.QuadCurveTo(cx, cy, ww, hh)
-	// 	gc.QuadCurveTo(cx, cy, margin, hh)
-	// 	gc.QuadCurveTo(cx, cy, margin, margin)
-
-	// } else {
 
 	gc.BeginPath()
 	gc.MoveTo(margin, margin)
@@ -447,25 +412,28 @@ func (w *Window) drawBackground(s WidgetState) {
 	gc.LineTo(margin, margin)
 	gc.FillStroke()
 	gc.Close()
-	// }
 
 	w.rawimage = dest
-	// log.Printf("drawBackground: w.X() is nil: %t", w.X() == nil)
 	w.ximg = xgraphics.NewConvert(w.X(), dest)
-	// log.Printf("drawBackground: w.ximg is nil after NewConvert: %t", w.ximg == nil)
 	w.drawLabel(w.ximg, w.title)
 }
 
 // drawLabel draws the window's title on the provided xgraphics.Image.
 func (w *Window) drawLabel(g *xgraphics.Image, str string, pos ...float64) {
-	// r := w.Rect.ImageRect()
 	tw, th := xgraphics.Extents(systemFont, 13, w.title)
 	x, y := (w.Width-tw)/2, (w.Height-th)/2
 	if len(pos) == 2 {
 		x, y = int(pos[0]), int(pos[1])
 	}
-	g.Text(x, y, systemFG, 13, systemFont, w.title)
+	g.Text(x, y, CurrentTheme.TextColor, 13, systemFont, w.title)
 }
+
+// toColorful converts a color.Color to colorful.Color.
+func toColorful(c color.Color) colorful.Color {
+	cful, _ := colorful.MakeColor(c)
+	return cful
+}
+
 
 type Container struct {
 	Window // Embed the existing Window struct directly
