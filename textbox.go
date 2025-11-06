@@ -34,6 +34,7 @@ func NewTextBox(title string, p *Window, dims ...int) *TextBox {
 	}
 	tbox := new(TextBox)
 	tbox.Widget = WidgetFactory(p, dims...)
+	tbox.bgColor = color.RGBA{0, 0, 0, 0} // Set background to transparent
 	tbox.init()
 	tbox.readOnly = true
 
@@ -132,7 +133,6 @@ func (t *TextBox) SetText(txt string) {
 	ar := strings.Split(txt, "\n")
 	t.line = 0
 	t.cursor = 0
-	t.bgColor = color.RGBA{0, 0, 255, 0}
 
 	t.drawBackground()
 	t.drawTextBox(StateNormal)

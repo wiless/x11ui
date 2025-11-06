@@ -35,6 +35,7 @@ func NewLabel(title string, p *Window, dims ...int) *Label {
 	lbl := new(Label)
 
 	lbl.Widget = WidgetFactory(p, dims...)
+	lbl.bgColor = color.RGBA{0, 0, 0, 0} // Set background to transparent
 
 	lbl.init()
 
