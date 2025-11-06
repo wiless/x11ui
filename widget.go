@@ -416,11 +416,7 @@ var origin = image.Point{0, 0}
 
 func (w *Widget) drawBorder(state WidgetState) {
 	var clr xgraphics.BGRA
-	if state == StateNormal {
-		clr = toBGRA(w.bgColor)
-	} else {
-		clr = toBGRA(w.lineColor)
-	}
+	clr = toBGRA(w.lineColor)
 	xg := w.canvas
 	// border image
 	outset := w.canvas.Rect
