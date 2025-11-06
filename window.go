@@ -503,11 +503,9 @@ func (c *Container) RelayoutChildren() {
 		case LayoutHor:
 			newRect.X = prevRect.X + prevRect.Width + c.hspacing
 			newRect.Y = prevRect.Y
-			newRect.Height = c.Rect.Height // Resize height to container's height
 		case LayoutVer:
 			newRect.X = prevRect.X
 			newRect.Y = prevRect.Y + prevRect.Height + c.vspacing
-			newRect.Width = c.Rect.Width // Resize width to container's width
 		default:
 			newRect.X = c.Rect.X + child.Rect.X
 			newRect.Y = c.Rect.Y + child.Rect.Y
