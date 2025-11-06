@@ -138,6 +138,7 @@ func (bw *ButtonWidget) updateButtonAppearance() {
 	}
 	bw.txtColor = bw.textColor
 
+	log.Printf("ButtonWidget Hover Color: %v", bw.hoverColor)
 	// Determine background color based on state
 	var currentBgColor color.Color
 	var currentLineColor color.Color
