@@ -33,7 +33,7 @@ func NewImgButton(title string, p *Window, dims ...int) *ImgButton {
 	}
 	tbox := new(ImgButton)
 	tbox.Widget = WidgetFactory(p, dims...)
-	tbox.fname = "hg.png"
+	// tbox.fname = "hg.png"
 	tbox.init()
 	xevent.KeyPressFun(tbox.keybHandler).Connect(tbox.xu, tbox.xwin.Id)
 
@@ -43,6 +43,13 @@ func NewImgButton(title string, p *Window, dims ...int) *ImgButton {
 	// tbox.loadTheme()
 	// pbar.SetValue(0.5)
 	return tbox
+}
+
+func (t *ImgButton) ResizeWidget(w, h int) {
+	t.Win().ReSize(w, h)
+	t.Widget.Resize(0, 0, w, h)
+	t.setupCanvas()
+
 }
 
 func (t *ImgButton) registerHandlers() {
@@ -60,6 +67,8 @@ func (t *ImgButton) DrawImage(img image.Image) {
 
 	// rgb := image.NewRGBA(img.Bounds())
 	rgb := t.canvas
+	// print the bounds
+
 	draw.Draw(rgb, rgb.Bounds().Bounds(), img, image.Point{0, 0}, draw.Src)
 
 	// t.canvas.For(func(x, y int) xgraphics.BGRA {

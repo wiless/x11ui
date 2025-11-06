@@ -7,20 +7,20 @@ import (
 	"github.com/BurntSushi/xgbutil/xgraphics"
 )
 
-type AlignMode int
+type TextAlign int
 
 const (
-	AlignTopLeft AlignMode = iota
-	AlignHVCenter
-	AlignHCenter
-	AlignVCenter
+	TextAlignTopLeft TextAlign = iota
+	TextAlignHVCenter
+	TextAlignHCenter
+	TextAlignVCenter
 )
 
 type Label struct {
 	*Widget
 	// title      string
 	autoresize bool
-	align      AlignMode
+	align      TextAlign
 	fsize      float64
 }
 
@@ -31,7 +31,7 @@ func NewLabel(title string, p *Window, dims ...int) *Label {
 	lbl := new(Label)
 	lbl.Widget = WidgetFactory(p, dims...)
 	lbl.init()
-	lbl.SetAlignMode(AlignHVCenter)
+	lbl.SetAlignMode(TextAlignHVCenter)
 	lbl.SetLabel(title)
 
 	// tbox.Create(p, dims...)
@@ -46,7 +46,7 @@ func (l *Label) AutoResize(auto bool) *Label {
 	return l
 }
 
-func (l *Label) SetAlignMode(align AlignMode) *Label {
+func (l *Label) SetAlignMode(align TextAlign) *Label {
 	l.align = align
 	l.SetLabel(l.title)
 	return l
@@ -54,6 +54,8 @@ func (l *Label) SetAlignMode(align AlignMode) *Label {
 
 func (l *Label) SetFontSize(size float64) *Label {
 	l.fsize = size
+	l.gc.SetFontSize(float64(l.fsize))
+
 	l.SetLabel(l.title)
 	return l
 }
@@ -87,7 +89,6 @@ func (l *Label) SetLabel(lbl string) {
 func (t *Label) updateLabel(state WidgetState) {
 	// log.Println("updateing text")
 	// W, H := float64(t.Width()), float64(t.Height())
-
 	// // gc := t.Context()
 	// // gc.SetFillColor(color.RGBA{0, 255, 200, 255})
 	// // gc.SetStrokeColor(color.RGBA{255, 200, 0, 255})
@@ -95,9 +96,25 @@ func (t *Label) updateLabel(state WidgetState) {
 	// // gc.StrokeStringAt(t.title, 0, 0)
 	// // gc.FillStroke()
 	// // gc.Close()
+
+	// t.gc.SetFontSize(float64(t.fsize))
+	// r.MoveTo(0, 0)
+	// r.ImageRect()
+	// W, H := float64(t.Width()), float64(t.Height())
+	// gc := t.Context()
+	// gc.SetFillColor(t.bgColor)
+	// gc.SetStrokeColor(t.lineColor)
+	// draw2dkit.Rectangle(gc, 0, 0, W, H)
+	// gc.FillStroke()
+	// gc.Close()
+
+	// t.canvas.XSurfaceSet(t.xwin.Id)
+
+	// t.gc.SetFontSize(float64(t.fsize))
+
 	t.drawBackground()
 	var xpos, ypos int
-	if t.align == AlignHVCenter {
+	if t.align == TextAlignHVCenter {
 		tw, th := xgraphics.Extents(systemFont, t.fsize, t.title)
 		xpos, ypos = t.Width()-tw, t.Height()-th
 		xpos, ypos = xpos/2, ypos/2

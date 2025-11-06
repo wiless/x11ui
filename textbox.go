@@ -27,7 +27,7 @@ type TextBox struct {
 	readOnly  bool
 }
 
-//NewTextBox creates a child TextBox widget in the roots of Window p
+// NewTextBox creates a child TextBox widget in the roots of Window p
 func NewTextBox(title string, p *Window, dims ...int) *TextBox {
 	if p == nil {
 		log.Fatal("Cannot Create Widget without Application")
@@ -118,6 +118,14 @@ func (t *TextBox) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	// 	fn()
 	// }
 
+}
+
+func (t *TextBox) SetFontSize(size int) *TextBox {
+	t.fsize = size
+	t.gc.SetFontSize(float64(t.fsize))
+
+	t.SetText(t.title)
+	return t
 }
 
 func (t *TextBox) SetText(txt string) {
@@ -291,7 +299,7 @@ func (t *TextBox) init() {
 }
 
 func (t *TextBox) drawTextBox(s WidgetState) {
-	t.gc.SetFontSize(15)
+
 	// r.MoveTo(0, 0)
 	// r.ImageRect()
 	W, H := float64(t.Width()), float64(t.Height())

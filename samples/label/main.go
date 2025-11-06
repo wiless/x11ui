@@ -16,7 +16,7 @@ func main() {
 	child := ap.NewChildWindow("Hello world", 0, 0, 300, 100)
 	child.SetBGcolor(color.RGBA{100, 0, 0, 30})
 	l = x11ui.NewLabel("Welcome to 1st Pin ", child, 10, 10, 150, 30)
-	l.SetAlignMode(x11ui.AlignHVCenter)
+	l.SetAlignMode(x11ui.TextAlignHVCenter)
 	l.AutoResize(true)
 	// l.Ho = hello
 	go hello()

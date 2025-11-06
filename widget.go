@@ -263,6 +263,19 @@ func (w *Widget) SetTitle(title string) {
 	w.title = title
 }
 
+func (w *Widget) Move(x, y int) {
+	w.xwin.Move(x, y)
+	var err error
+	w.Rect, err = w.xwin.Geometry()
+	if err != nil {
+		log.Printf("Error getting geometry after move: %v", err)
+	}
+}
+
+func (w *Widget) Align(alignment Alignment) {
+	w.Win().Align(alignment)
+}
+
 func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 
 	modStr := keybind.ModifierString(e.State)

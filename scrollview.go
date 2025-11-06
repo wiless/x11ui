@@ -11,7 +11,7 @@ type ScrollView struct {
 	*Widget
 	title         string
 	autoresize    bool
-	align         AlignMode
+	align         Alignment
 	margins       int
 	basewidgets   []*Widget
 	viewWidget    *Widget

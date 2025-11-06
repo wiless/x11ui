@@ -47,6 +47,31 @@ func (r *Rect) Grow(dw, dh int) *Rect {
 	return r
 }
 
+func (r *Rect) WithPadding(dx, dy int) Rect {
+	return Rect{
+		X:      r.X + dx,
+		Y:      r.Y + dy,
+		Width:  r.Width - 2*dx,
+		Height: r.Height - 2*dy,
+	}
+}
+
+// Alignment specifies the position relative to a parent.
+type Alignment int
+
+const (
+	AlignNone Alignment = iota
+	AlignTopLeft
+	AlignTopCenter
+	AlignTopRight
+	AlignMiddleLeft
+	AlignCenter
+	AlignMiddleRight
+	AlignBottomLeft
+	AlignBottomCenter
+	AlignBottomRight
+)
+
 func (r *Rect) array() []int {
 	result := []int{r.X, r.Y, r.Width, r.Height}
 	return result

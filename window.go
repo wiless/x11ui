@@ -425,13 +425,8 @@ func (w *Window) drawBackground(s WidgetState) {
 		gc.SetStrokeColor(systemFG)
 	}
 
-	gc.SetLineWidth(1)
-
-	// gc.SetLineJoin(draw2d.RoundJoin)
-	// gc.Rotate(math.Pi / 4.0)
-
 	ww, hh := float64(w.Width), float64(w.Height)
-	margin := 1.0
+	margin := w.margin
 	ww, hh = ww-margin, hh-margin
 	// cx, cy := ww/2, hh/2
 	// Draw a closed shape
@@ -699,24 +694,23 @@ func newWindow(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	r := newRect(dims...)
 	win, err := xwindow.Generate(X)
 	// s := X.Screen()
-	w.bgcolor = color.RGBA{0x20, 0x20, 0x20, 0xFF}
+	w.bgcolor = color.RGBA{0, 0, 0, 255} // Set default window background to black
 
 	// mask := xproto.GcForeground | xproto.GcGraphicsExposures
 	// values := []uint32{s.BlackPixel, 0}
-	win.Create(parent, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0xfffff)
-	win.Map()
-
-	// win.Create(parent, r.X, r.Y, r.Width, r.Height, mask, values...)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// win.MoveResize(r.X, r.Y, r.Width, r.Height)
-	if p == nil {
-		win.Change(xproto.CwBackPixel, 0x684426)
-
-	} else {
+		win.Create(parent, r.X, r.Y, r.Width, r.Height, 0)
+		win.Map()
+	
+		// win.Create(parent, r.X, r.Y, r.Width, r.Height, mask, values...)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// win.MoveResize(r.X, r.Y, r.Width, r.Height)
+		// if p == nil {
+		// 	win.Change(xproto.CwBackPixel, 0x000000) // Set root window background to black
+		// } else {
 		// win.Change(xproto.CwBackPixel, 0xFFAA00)
-	}
+		// }
 
 	//if p == nil {
 	win.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonRelease, xproto.EventMaskExposure, xproto.EventMaskEnterWindow, xproto.EventMaskLeaveWindow, xproto.EventMaskKeyPress)
@@ -803,7 +797,11 @@ func RandomGraph(r image.Rectangle) *image.RGBA {
 
 // PaintOnce draws the window's background and label a single time.
 func (w *Window) PaintOnce() {
-	w.drawBackground(StateNormal)
+	if w.isButton {
+		w.drawBackground(StateNormal)
+	} else {
+		w.drawView(StateNormal)
+	}
 	w.finishPaint(w.ximg)
 }
 

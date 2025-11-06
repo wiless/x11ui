@@ -298,7 +298,7 @@ func (s *Application) defaultWindow() {
 	w, h := int(sinfo.WidthInPixels)/2, int(sinfo.HeightInPixels)/2
 	w, h = s.defW, s.defH
 
-	s.appWin.Create(s.xu.RootWin(), 0, 0, w, h, xproto.CwBackPixel, 0x101010)
+	s.appWin.Create(s.xu.RootWin(), 0, 0, w, h, xproto.CwBackPixel, 0x000000)
 	s.appWin.prevRect = s.appWin.Rect
 	ewmh.WmAllowedActionsSet(s.xu, s.appWin.Id, []string{
 		"_NET_WM_ACTION_MOVE",
@@ -689,7 +689,7 @@ func (a *Application) NewChildWindow(title string, dims ...int) *Window {
 	a.pvsChildRect = r
 
 	// w.SetBackGround(colorful.LinearRgb(0, 0, 0))
-	w.bgcolor = color.RGBA{100, 100, 100, 255}
+	w.bgcolor = color.RGBA{0, 0, 0, 255}
 	w.drawView(StateNormal)
 	w.finishPaint(w.ximg)
 	// w.SetTitle(title)
