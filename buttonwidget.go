@@ -4,6 +4,9 @@ import (
 	"image/color"
 	"log"
 
+	"github.com/BurntSushi/xgbutil"
+	"github.com/BurntSushi/xgbutil/mousebind"
+	"github.com/BurntSushi/xgbutil/xevent"
 	"github.com/BurntSushi/xgbutil/xgraphics"
 	"github.com/lucasb-eyer/go-colorful"
 )
