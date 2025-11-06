@@ -133,6 +133,7 @@ func (bw *ButtonWidget) updateButtonAppearance() {
 	bw.normalColor = CurrentTheme.BarColor
 	bw.hoverColor = baseColor.BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped()
 	bw.pressColor = baseColor.BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped()
+	log.Printf("ButtonWidget Colors: normal=%v, hover=%v", bw.normalColor, bw.hoverColor)
 
 	// Dynamically determine text color based on background luminance
 	rVal, gVal, bVal, _ := baseColor.RGBA()
