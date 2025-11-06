@@ -73,7 +73,9 @@ type Widget struct {
 	childs []*Widget
 	/// Handlers
 	HandlerFunctions
-	modal bool
+	modal    bool
+	isButton bool
+	state    WidgetState
 }
 
 func (w *Widget) SetModal(modal bool) {
@@ -99,6 +101,24 @@ func (w *Widget) SetFontSize(fsize int) {
 
 func (w *Widget) SetTextColor(c color.Color) {
 	w.txtColor = c
+}
+
+func (w *Widget) moved() {
+	var err error
+	w.Rect, err = w.xwin.Geometry()
+	if err != nil {
+		log.Printf("Error getting geometry after move: %v", err)
+	}
+}
+
+func (w *Widget) resized(width, height int) {
+	var err error
+	currentRect, err := w.xwin.Geometry()
+	if err != nil {
+		log.Printf("Error getting geometry in resized: %v", err)
+	}
+	w.Rect = xrect.New(currentRect.X(), currentRect.Y(), width, height)
+	w.setupCanvas()
 }
 
 // InvertColors swaps the background and text colors of the widget.
@@ -197,6 +217,7 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 
 func (w *Widget) init() {
 
+	w.state = StateNormal
 	w.EnableHover = true
 
 	w.LoadTheme("")
@@ -613,6 +634,14 @@ func (w *Widget) PaintRegions() {
 
 }
 
+func (w *Widget) Paint() {
+	// A generic paint method for base widgets.
+	// It can draw the background and border.
+	w.drawBackground()
+	w.drawBorder(w.state)
+	w.updateCanvas()
+}
+
 // wrapper changed
 func NewWidget(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Widget {
 	result := WidgetFactory(p, dims...)
@@ -624,12 +653,18 @@ func (w *Widget) Win() *Window {
 	win := new(Window)
 	win.Window = w.xwin
 	win.Rect = XRectToRect(w.Rect)
+	win.title = w.title // Copy the title
+	win.bgcolor = w.bgColor
+	win.isButton = w.isButton
+	win.state = w.state
+	win.widget = w
 	return win
 }
 
 // WindowProvider interface defines a method to retrieve the underlying *Window.
 type WindowProvider interface {
 	Win() *Window
+	Paint()
 }
 
 // WidgetState represents the visual state of a widget.

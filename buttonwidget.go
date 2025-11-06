@@ -19,7 +19,6 @@ type ButtonWidget struct {
 	checked     bool
 	onClickFn   func()
 	releaseFn   func(X *xgbutil.XUtil, e xevent.ButtonReleaseEvent)
-	state       WidgetState
 	normalColor color.Color
 	hoverColor  color.Color
 	pressColor  color.Color
@@ -38,10 +37,10 @@ func NewButtonWidget(title string, p *Window, dims ...int) *ButtonWidget {
 		text:      title,
 		isToggle:  false,
 		checked:   false,
-		state:     StateNormal,
 		fsize:     12,
 	}
 	bw.Widget = WidgetFactory(p, dims...)
+	bw.Widget.isButton = true
 	bw.SetTitle(title) // Set the window title for debugging/WM
 	bw.init()
 	bw.SetLabel(title) // Initial rendering of the label
@@ -50,6 +49,10 @@ func NewButtonWidget(title string, p *Window, dims ...int) *ButtonWidget {
 }
 
 // SetLabel sets the text displayed on the button.
+func (bw *ButtonWidget) Paint() {
+	bw.updateButtonAppearance()
+}
+
 func (bw *ButtonWidget) SetLabel(lbl string) {
 	bw.text = lbl
 	bw.updateButtonAppearance()
@@ -97,18 +100,18 @@ func (bw *ButtonWidget) LoadTheme(str string) {
 }
 
 func (bw *ButtonWidget) handleHover() {
-	bw.state = StateHovered
+	bw.Widget.state = StateHovered
 	bw.updateButtonAppearance()
 }
 
 func (bw *ButtonWidget) handleLeave() {
-	bw.state = StateNormal
+	bw.Widget.state = StateNormal
 	bw.updateButtonAppearance()
 }
 
 func (bw *ButtonWidget) handleButtonClick() {
 	// Briefly show pressed state
-	bw.state = StatePressed
+	bw.Widget.state = StatePressed
 	bw.updateButtonAppearance()
 
 	if bw.onClickFn != nil {
@@ -120,9 +123,9 @@ func (bw *ButtonWidget) handleButtonClick() {
 
 func (bw *ButtonWidget) handleButtonRelease(X *xgbutil.XUtil, e xevent.ButtonReleaseEvent) {
 	if bw.isToggle && bw.checked {
-		bw.state = StateChecked // Custom state for checked toggle button
+		bw.Widget.state = StateChecked // Custom state for checked toggle button
 	} else {
-		bw.state = StateNormal
+		bw.Widget.state = StateNormal
 	}
 	bw.updateButtonAppearance()
 }
@@ -149,7 +152,7 @@ func (bw *ButtonWidget) updateButtonAppearance() {
 	var currentBgColor color.Color
 	var currentLineColor color.Color
 
-	switch bw.state {
+	switch bw.Widget.state {
 	case StateNormal:
 		currentBgColor = toRGBA(bw.normalColor)
 		currentLineColor = CurrentTheme.LineColor
@@ -184,11 +187,10 @@ func (bw *ButtonWidget) updateButtonAppearance() {
 	tw, th := xgraphics.Extents(systemFont, bw.fsize, bw.text)
 	xpos, ypos := (bw.Width()-tw)/2, (bw.Height()-th)/2
 
-	log.Printf("ButtonWidget.updateButtonAppearance: Drawing text '%s' at (%d, %d) with color %v and font size %f. Current BgColor: %v, TextColor: %v, State: %v", bw.text, xpos, ypos, bw.textColor, bw.fsize, bw.bgColor, bw.txtColor, bw.state)
 	bw.canvas.Text(xpos, ypos, bw.textColor, bw.fsize, systemFont, bw.text)
 
 	// Draw border
-	bw.drawBorder(bw.state) // This will use bw.Widget.bgColor or bw.Widget.lineColor
+	bw.drawBorder(bw.Widget.state) // This will use bw.Widget.bgColor or bw.Widget.lineColor
 
 	bw.updateCanvas()
 }

@@ -136,6 +136,8 @@ type Window struct {
 	margin           float64
 	rawimage         *image.RGBA
 	ximg             *xgraphics.Image
+	state            WidgetState
+	widget           *Widget
 }
 
 // Title returns the title of the window.
@@ -340,19 +342,36 @@ func (w *Window) drawView(s WidgetState) {
 	dest := image.NewRGBA(r)
 	gc := draw2dimg.NewGraphicContext(dest)
 
-	switch s {
-	case StateNormal, StateReleased:
-		gc.SetFillColor(toRGBA(w.bgcolor))
-		gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
-	case StateHovered:
-		gc.SetFillColor(toRGBA(toColorful(CurrentTheme.ForegroundColor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.2).Clamped()))
-		gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
-	case StatePressed:
-		gc.SetFillColor(toRGBA(toColorful(CurrentTheme.ForegroundColor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped()))
-		gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
-	case StateSpecial:
-		gc.SetFillColor(toRGBA(toColorful(w.bgcolor).BlendLuvLCh(toColorful(CurrentTheme.CheckboxCheckedColor), 0.5).Clamped()))
-		gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
+	if w.bgcolor != nil {
+		switch s {
+		case StateNormal, StateReleased:
+			gc.SetFillColor(toRGBA(w.bgcolor))
+			gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
+		case StateHovered:
+			gc.SetFillColor(toRGBA(toColorful(w.bgcolor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.2).Clamped()))
+			gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
+		case StatePressed:
+			gc.SetFillColor(toRGBA(toColorful(w.bgcolor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped()))
+			gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
+		case StateSpecial:
+			gc.SetFillColor(toRGBA(toColorful(w.bgcolor).BlendLuvLCh(toColorful(CurrentTheme.CheckboxCheckedColor), 0.5).Clamped()))
+			gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
+		}
+	} else {
+		switch s {
+		case StateNormal, StateReleased:
+			gc.SetFillColor(toRGBA(w.bgcolor))
+			gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
+		case StateHovered:
+			gc.SetFillColor(toRGBA(toColorful(CurrentTheme.ForegroundColor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.2).Clamped()))
+			gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
+		case StatePressed:
+			gc.SetFillColor(toRGBA(toColorful(CurrentTheme.ForegroundColor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped()))
+			gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
+		case StateSpecial:
+			gc.SetFillColor(toRGBA(toColorful(w.bgcolor).BlendLuvLCh(toColorful(CurrentTheme.CheckboxCheckedColor), 0.5).Clamped()))
+			gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
+		}
 	}
 
 	gc.SetLineWidth(0)
@@ -384,22 +403,42 @@ func (w *Window) drawBackground(s WidgetState) {
 
 	var fillColor, strokeColor color.Color
 
-	switch s {
-	case StateNormal, StateReleased:
-		fillColor = toRGBA(CurrentTheme.BarColor)
-		strokeColor = toRGBA(CurrentTheme.LineColor)
-	case StateHovered:
-		fillColor = toRGBA(toColorful(CurrentTheme.BarColor).BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped())
-		strokeColor = toRGBA(CurrentTheme.LineColor)
-	case StatePressed:
-		fillColor = toRGBA(toColorful(CurrentTheme.BarColor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped())
-		strokeColor = toRGBA(CurrentTheme.LineColor)
-	case StateSpecial:
-		fillColor = toRGBA(CurrentTheme.CheckboxCheckedColor)
-		strokeColor = toRGBA(CurrentTheme.LineColor)
-	case StateHoveredChecked:
-		fillColor = toRGBA(toColorful(CurrentTheme.CheckboxCheckedColor).BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped())
-		strokeColor = toRGBA(CurrentTheme.LineColor)
+	if w.bgcolor != nil {
+		switch s {
+		case StateNormal, StateReleased:
+			fillColor = w.bgcolor
+			strokeColor = toRGBA(CurrentTheme.LineColor)
+		case StateHovered:
+			fillColor = toRGBA(toColorful(w.bgcolor).BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped())
+			strokeColor = toRGBA(CurrentTheme.LineColor)
+		case StatePressed:
+			fillColor = toRGBA(toColorful(w.bgcolor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped())
+			strokeColor = toRGBA(CurrentTheme.LineColor)
+		case StateSpecial:
+			fillColor = toRGBA(CurrentTheme.CheckboxCheckedColor)
+			strokeColor = toRGBA(CurrentTheme.LineColor)
+		case StateHoveredChecked:
+			fillColor = toRGBA(toColorful(CurrentTheme.CheckboxCheckedColor).BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped())
+			strokeColor = toRGBA(CurrentTheme.LineColor)
+		}
+	} else {
+		switch s {
+		case StateNormal, StateReleased:
+			fillColor = toRGBA(CurrentTheme.BarColor)
+			strokeColor = toRGBA(CurrentTheme.LineColor)
+		case StateHovered:
+			fillColor = toRGBA(toColorful(CurrentTheme.BarColor).BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped())
+			strokeColor = toRGBA(CurrentTheme.LineColor)
+		case StatePressed:
+			fillColor = toRGBA(toColorful(CurrentTheme.BarColor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped())
+			strokeColor = toRGBA(CurrentTheme.LineColor)
+		case StateSpecial:
+			fillColor = toRGBA(CurrentTheme.CheckboxCheckedColor)
+			strokeColor = toRGBA(CurrentTheme.LineColor)
+		case StateHoveredChecked:
+			fillColor = toRGBA(toColorful(CurrentTheme.CheckboxCheckedColor).BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped())
+			strokeColor = toRGBA(CurrentTheme.LineColor)
+		}
 	}
 
 	gc.SetFillColor(fillColor)
@@ -478,7 +517,6 @@ func (c *Container) AddWidget(widget WindowProvider) {
 	c.RelayoutChildren() // Relayout and redraw all children
 }
 func (c *Container) RelayoutChildren() {
-	log.Printf("RelayoutChildren: Container dimensions: Width=%d, Height=%d", c.Rect.Width, c.Rect.Height)
 	c.ClearAll() // Clear the container's background
 
 	// Previous child rect, in absolute coordinates. Start with a zero-width rect at the container's top-left.
@@ -491,9 +529,6 @@ func (c *Container) RelayoutChildren() {
 
 	for _, wp := range c.children {
 		child := wp.Win() // Get the underlying *Window
-
-		// Log original position
-		log.Printf("RelayoutChildren: Child '%s' original absolute position: X=%d, Y=%d, W=%d, H=%d", child.Title(), child.Rect.X, child.Rect.Y, child.Rect.Width, child.Rect.Height)
 
 		var newRect Rect // absolute coordinates
 		newRect.Width = child.Rect.Width
@@ -517,9 +552,6 @@ func (c *Container) RelayoutChildren() {
 		relativeNewX := paddedRect.X - c.Rect.X
 		relativeNewY := paddedRect.Y - c.Rect.Y
 
-		// Log new calculated relative position
-		log.Printf("RelayoutChildren: Child '%s' calculated relative new position: X=%d, Y=%d, W=%d, H=%d", child.Title(), relativeNewX, relativeNewY, paddedRect.Width, paddedRect.Height)
-
 		child.Move(relativeNewX, relativeNewY)
 		if c.layoutDirection == LayoutVer {
 			child.Resize(paddedRect.Width, child.Rect.Height)
@@ -529,7 +561,7 @@ func (c *Container) RelayoutChildren() {
 			child.Resize(paddedRect.Width, paddedRect.Height)
 		}
 		prevRect = newRect
-		child.PaintOnce()
+		wp.Paint()
 	}
 	c.pvsChildRect = prevRect
 }
@@ -714,8 +746,6 @@ func newWindow(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 	} else {
 		mousebind.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "1", false, true)
 		mousebind.ButtonReleaseFun(w.mouseReleaseHandler).Connect(X, win.Id, "1", false, true)
-		xevent.EnterNotifyFun(w.onHoverEvent).Connect(X, win.Id)
-		xevent.LeaveNotifyFun(w.onLeaveEvent).Connect(X, win.Id)
 		mousebind.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "2", false, true)
 	}
 	w.PaintOnce()
@@ -781,7 +811,10 @@ func RandomGraph(r image.Rectangle) *image.RGBA {
 // PaintOnce draws the window's background and label a single time.
 func (w *Window) PaintOnce() {
 	if w.isButton {
-		w.drawBackground(StateNormal)
+		if w.state == 0 {
+			w.state = StateNormal
+		}
+		w.drawBackground(w.state)
 	} else {
 		w.drawView(StateNormal)
 	}
@@ -796,6 +829,14 @@ func (w *Window) XWin() *xwindow.Window {
 // XProtoWin returns the X protocol window ID.
 func (w *Window) XProtoWin() xproto.Window {
 	return w.Window.Id
+}
+
+func (w *Window) Win() *Window {
+	return w
+}
+
+func (w *Window) Paint() {
+	w.PaintOnce()
 }
 
 func (w *Window) Reparent(newParent xproto.Window, x, y int) error {
@@ -813,12 +854,18 @@ func (w *Window) Move(x, y int) {
 	w.Window.Move(x, y)
 	w.Rect.X = x
 	w.Rect.Y = y
+	if w.widget != nil {
+		w.widget.moved()
+	}
 }
 
 func (w *Window) Resize(width, height int) {
 	w.Window.Resize(width, height)
 	w.Rect.Width = width
 	w.Rect.Height = height
+	if w.widget != nil {
+		w.widget.resized(width, height)
+	}
 }
 
 func (w *Window) Align(alignment Alignment) {
