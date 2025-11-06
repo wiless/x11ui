@@ -85,23 +85,6 @@ func (bw *ButtonWidget) init() {
 }
 
 func (bw *ButtonWidget) LoadTheme(str string) {
-	// Default colors derived from CurrentTheme
-	baseColor := toColorful(CurrentTheme.BarColor)
-	bw.normalColor = CurrentTheme.BarColor
-	bw.hoverColor = baseColor.BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped()
-	bw.pressColor = baseColor.BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped()
-
-	// Dynamically determine text color based on background luminance
-	rVal, gVal, bVal, _ := baseColor.RGBA()
-	avg := (float64(rVal>>8) + float64(gVal>>8) + float64(bVal>>8)) / 3.0 / 255.0
-
-	if avg > 0.5 { // If background is light, use dark text
-		bw.textColor = color.RGBA{R: 0, G: 0, B: 0, A: 255} // Black
-	} else { // If background is dark, use light text
-		bw.textColor = color.RGBA{R: 255, G: 255, B: 255, A: 255} // White
-	}
-	log.Printf("ButtonWidget.LoadTheme: normalColor=%v, hoverColor=%v, pressColor=%v, textColor=%v", bw.normalColor, bw.hoverColor, bw.pressColor, bw.textColor)
-
 	bw.Widget.LoadTheme(str) // Call base widget theme loading
 	bw.bgColor = bw.normalColor // Set initial background
 	bw.txtColor = bw.textColor
@@ -138,6 +121,23 @@ func (bw *ButtonWidget) handleButtonClick() {
 }
 
 func (bw *ButtonWidget) updateButtonAppearance() {
+	// Dynamically recalculate colors based on the current theme each time the button is drawn
+	baseColor := toColorful(CurrentTheme.BarColor)
+	bw.normalColor = CurrentTheme.BarColor
+	bw.hoverColor = baseColor.BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped()
+	bw.pressColor = baseColor.BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped()
+
+	// Dynamically determine text color based on background luminance
+	rVal, gVal, bVal, _ := baseColor.RGBA()
+	avg := (float64(rVal>>8) + float64(gVal>>8) + float64(bVal>>8)) / 3.0 / 255.0
+
+	if avg > 0.5 { // If background is light, use dark text
+		bw.textColor = color.RGBA{R: 0, G: 0, B: 0, A: 255} // Black
+	} else { // If background is dark, use light text
+		bw.textColor = color.RGBA{R: 255, G: 255, B: 255, A: 255} // White
+	}
+	bw.txtColor = bw.textColor
+
 	// Determine background color based on state
 	var currentBgColor color.Color
 	var currentLineColor color.Color
