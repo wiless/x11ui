@@ -532,6 +532,7 @@ func (c *Container) SetSpacing(dx, dy int) {
 
 // rePaint redraws the window with a given state, if it's a button.
 func (w *Window) rePaint(s WidgetState) {
+	log.Printf("rePaint called for window: %s, isButton: %v", w.title, w.isButton)
 	if w.isButton == true {
 		w.drawBackground(s)
 		w.finishPaint(w.ximg)
