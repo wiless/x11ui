@@ -15,7 +15,7 @@ type ButtonWidget struct {
 	isToggle    bool
 	checked     bool
 	onClickFn   func()
-	releaseFn   func()
+	releaseFn   func(X *xgbutil.XUtil, e xevent.ButtonReleaseEvent)
 	state       WidgetState
 	normalColor color.Color
 	hoverColor  color.Color
@@ -114,7 +114,7 @@ func (bw *ButtonWidget) handleButtonClick() {
 
 }
 
-func (bw *ButtonWidget) handleButtonRelease() {
+func (bw *ButtonWidget) handleButtonRelease(X *xgbutil.XUtil, e xevent.ButtonReleaseEvent) {
 	if bw.isToggle && bw.checked {
 		bw.state = StateChecked // Custom state for checked toggle button
 	} else {
