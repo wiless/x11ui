@@ -15,6 +15,7 @@ type ButtonWidget struct {
 	isToggle    bool
 	checked     bool
 	onClickFn   func()
+	releaseFn   func()
 	state       WidgetState
 	normalColor color.Color
 	hoverColor  color.Color
@@ -80,8 +81,9 @@ func (bw *ButtonWidget) init() {
 	bw.gc.SetFontSize(bw.fsize)
 	bw.updateButtonAppearance() // Initial draw
 	bw.HoverFn = bw.handleHover
-	bw.LeaveFn = bw.handleLeave
 	bw.ClkFn = bw.handleButtonClick
+	bw.releaseFn = bw.handleButtonRelease
+	mousebind.ButtonReleaseFun(bw.releaseFn).Connect(bw.xu, bw.xwin.Id, "1", false, true)
 }
 
 func (bw *ButtonWidget) LoadTheme(str string) {
@@ -101,21 +103,22 @@ func (bw *ButtonWidget) handleLeave() {
 }
 
 func (bw *ButtonWidget) handleButtonClick() {
-	if bw.isToggle {
-		bw.checked = !bw.checked
-	}
-	bw.state = StatePressed // Briefly show pressed state
+	// Briefly show pressed state
+	bw.state = StatePressed
 	bw.updateButtonAppearance()
 
 	if bw.onClickFn != nil {
 		bw.onClickFn()
 	}
 
-	// Revert to normal/checked state after a short delay or next event loop cycle
-	// For now, we'll just revert immediately. A real UI might use a timer.
-	bw.state = StateNormal
+
+}
+
+func (bw *ButtonWidget) handleButtonRelease() {
 	if bw.isToggle && bw.checked {
 		bw.state = StateChecked // Custom state for checked toggle button
+	} else {
+		bw.state = StateNormal
 	}
 	bw.updateButtonAppearance()
 }
