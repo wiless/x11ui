@@ -605,7 +605,7 @@ func (a *Application) NewContainer(layout LayoutDirection, dims ...int) *Contain
 	container := &Container{
 		Window:          *tempWindow, // Dereference the pointer to assign to the embedded value
 		layoutDirection: layout,
-		children:        make([]*Window, 0),
+		children:        make([]WindowProvider, 0),
 		hspacing:        a.hspacing, // Default spacing
 		vspacing:        a.vspacing,
 

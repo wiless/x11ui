@@ -342,17 +342,17 @@ func (w *Window) drawView(s WidgetState) {
 
 	switch s {
 	case StateNormal, StateReleased:
-		gc.SetFillColor(w.bgcolor)
-		gc.SetStrokeColor(CurrentTheme.LineColor)
+		gc.SetFillColor(toRGBA(w.bgcolor))
+		gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
 	case StateHovered:
-		gc.SetFillColor(toColorful(w.bgcolor).BlendLuvLCh(toColorful(CurrentTheme.ForegroundColor), 0.5).Clamped())
-		gc.SetStrokeColor(CurrentTheme.LineColor)
+		gc.SetFillColor(toRGBA(toColorful(CurrentTheme.ForegroundColor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.2).Clamped()))
+		gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
 	case StatePressed:
-		gc.SetFillColor(toColorful(w.bgcolor).BlendLuvLCh(toColorful(CurrentTheme.BackgroundColor), 0.5).Clamped())
-		gc.SetStrokeColor(CurrentTheme.LineColor)
+		gc.SetFillColor(toRGBA(toColorful(CurrentTheme.ForegroundColor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped()))
+		gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
 	case StateSpecial:
-		gc.SetFillColor(toColorful(w.bgcolor).BlendLuvLCh(toColorful(CurrentTheme.CheckboxCheckedColor), 0.5).Clamped())
-		gc.SetStrokeColor(CurrentTheme.LineColor)
+		gc.SetFillColor(toRGBA(toColorful(w.bgcolor).BlendLuvLCh(toColorful(CurrentTheme.CheckboxCheckedColor), 0.5).Clamped()))
+		gc.SetStrokeColor(toRGBA(CurrentTheme.LineColor))
 	}
 
 	gc.SetLineWidth(0)
@@ -372,33 +372,38 @@ func (w *Window) drawView(s WidgetState) {
 
 	w.rawimage = dest
 	w.ximg = xgraphics.NewConvert(w.X(), dest)
-	w.drawLabel(w.ximg, w.title, margin, margin)
+	w.drawLabel(w.ximg, w.title, nil, margin, margin)
 }
 
 // drawBackground draws the background of the window based on its state.
 func (w *Window) drawBackground(s WidgetState) {
-
+	log.Printf("Window.drawBackground: Drawing for state %v", s)
 	r := w.ImageRect()
 	dest := image.NewRGBA(r)
 	gc := draw2dimg.NewGraphicContext(dest)
 
+	var fillColor, strokeColor color.Color
+
 	switch s {
 	case StateNormal, StateReleased:
-		gc.SetFillColor(CurrentTheme.BackgroundColor)
-		gc.SetStrokeColor(CurrentTheme.LineColor)
+		fillColor = toRGBA(CurrentTheme.BarColor)
+		strokeColor = toRGBA(CurrentTheme.LineColor)
 	case StateHovered:
-		gc.SetFillColor(toColorful(CurrentTheme.BackgroundColor).BlendLuvLCh(toColorful(CurrentTheme.ForegroundColor), 0.5).Clamped())
-		gc.SetStrokeColor(CurrentTheme.LineColor)
+		fillColor = toRGBA(toColorful(CurrentTheme.BarColor).BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped())
+		strokeColor = toRGBA(CurrentTheme.LineColor)
 	case StatePressed:
-		gc.SetFillColor(toColorful(CurrentTheme.BackgroundColor).BlendLuvLCh(toColorful(CurrentTheme.BarColor), 0.5).Clamped())
-		gc.SetStrokeColor(CurrentTheme.LineColor)
+		fillColor = toRGBA(toColorful(CurrentTheme.BarColor).BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped())
+		strokeColor = toRGBA(CurrentTheme.LineColor)
 	case StateSpecial:
-		gc.SetFillColor(CurrentTheme.CheckboxCheckedColor)
-		gc.SetStrokeColor(CurrentTheme.LineColor)
+		fillColor = toRGBA(CurrentTheme.CheckboxCheckedColor)
+		strokeColor = toRGBA(CurrentTheme.LineColor)
 	case StateHoveredChecked:
-		gc.SetFillColor(toColorful(CurrentTheme.CheckboxCheckedColor).BlendLuvLCh(toColorful(CurrentTheme.ForegroundColor), 0.5).Clamped())
-		gc.SetStrokeColor(CurrentTheme.LineColor)
+		fillColor = toRGBA(toColorful(CurrentTheme.CheckboxCheckedColor).BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped())
+		strokeColor = toRGBA(CurrentTheme.LineColor)
 	}
+	log.Printf("Window.drawBackground: State %v, FillColor %v, StrokeColor %v", s, fillColor, strokeColor)
+	gc.SetFillColor(fillColor)
+	gc.SetStrokeColor(strokeColor)
 
 	ww, hh := float64(w.Width), float64(w.Height)
 	margin := w.margin
@@ -415,24 +420,36 @@ func (w *Window) drawBackground(s WidgetState) {
 
 	w.rawimage = dest
 	w.ximg = xgraphics.NewConvert(w.X(), dest)
-	w.drawLabel(w.ximg, w.title)
+
+	var buttonTextColor color.Color
+	barColorColorful := toColorful(CurrentTheme.BarColor)
+	rVal, gVal, bVal, _ := barColorColorful.RGBA()
+	avg := (float64(rVal>>8) + float64(gVal>>8) + float64(bVal>>8)) / 3.0 / 255.0
+
+	if avg > 0.5 { // If background is light, use dark text
+		buttonTextColor = color.RGBA{R: 0, G: 0, B: 0, A: 255} // Black
+	} else { // If background is dark, use light text
+		buttonTextColor = color.RGBA{R: 255, G: 255, B: 255, A: 255} // White
+	}
+	w.drawLabel(w.ximg, w.title, buttonTextColor)
 }
 
 // drawLabel draws the window's title on the provided xgraphics.Image.
-func (w *Window) drawLabel(g *xgraphics.Image, str string, pos ...float64) {
+func (w *Window) drawLabel(g *xgraphics.Image, str string, textColor color.Color, pos ...float64) {
+	if textColor == nil {
+		textColor = CurrentTheme.TextColor
+	}
 	tw, th := xgraphics.Extents(systemFont, 13, w.title)
 	x, y := (w.Width-tw)/2, (w.Height-th)/2
 	if len(pos) == 2 {
 		x, y = int(pos[0]), int(pos[1])
 	}
-	g.Text(x, y, CurrentTheme.TextColor, 13, systemFont, w.title)
+	g.Text(x, y, textColor, 13, systemFont, w.title)
 }
 
-// toColorful converts a color.Color to colorful.Color.
-func toColorful(c color.Color) colorful.Color {
-	cful, _ := colorful.MakeColor(c)
-	return cful
-}
+// In drawView, when calling w.drawLabel(w.ximg, w.title, margin, margin):
+// w.drawLabel(w.ximg, w.title, nil, margin, margin)
+
 
 
 type Container struct {
@@ -440,7 +457,7 @@ type Container struct {
 
 	layoutDirection LayoutDirection // Horizontal or Vertical
 
-	children []*Window // List of child widgets/windows
+	children []WindowProvider // List of child widgets/windows
 
 	hspacing, vspacing int
 
@@ -450,7 +467,7 @@ type Container struct {
 
 }
 
-func (c *Container) AddWidget(widget *Window) {
+func (c *Container) AddWidget(widget WindowProvider) {
 	// Check if widget is already added
 	for _, child := range c.children {
 		if child == widget {
@@ -471,7 +488,8 @@ func (c *Container) RelayoutChildren() {
 		prevRect.Height = -c.vspacing
 	}
 
-	for _, child := range c.children {
+	for _, wp := range c.children {
+		child := wp.Win() // Get the underlying *Window
 		var newRect Rect // absolute coordinates
 		newRect.Width = child.Rect.Width
 		newRect.Height = child.Rect.Height
@@ -511,21 +529,6 @@ func (c *Container) SetSpacing(dx, dy int) {
 }
 
 // WidgetState represents the current state of a UI widget
-type WidgetState int
-
-const (
-	// StateNormal indicates the normal, default state of a widget.
-	StateNormal WidgetState = iota
-	// StatePressed indicates the state when a widget is being pressed (e.g., a button).
-	StatePressed
-	// StateReleased indicates the state when a widget has just been released after being pressed.
-	StateReleased
-	// StateHovered indicates the state when the mouse cursor is hovering over a widget.
-	StateHovered
-	// StateSpecial indicates a special or custom state for a widget.
-	StateSpecial
-	StateHoveredChecked
-)
 
 // rePaint redraws the window with a given state, if it's a button.
 func (w *Window) rePaint(s WidgetState) {

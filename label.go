@@ -25,19 +25,33 @@ type Label struct {
 }
 
 func NewLabel(title string, p *Window, dims ...int) *Label {
+
 	if p == nil {
+
 		log.Fatal("Cannot Create Widget without Application")
+
 	}
+
 	lbl := new(Label)
+
 	lbl.Widget = WidgetFactory(p, dims...)
+
 	lbl.init()
+
 	lbl.SetAlignMode(TextAlignHVCenter)
+
 	lbl.SetLabel(title)
 
+
+
 	// tbox.Create(p, dims...)
+
 	// tbox.loadTheme()
+
 	// pbar.SetValue(0.5)
+
 	return lbl
+
 }
 
 func (l *Label) AutoResize(auto bool) *Label {
@@ -68,7 +82,6 @@ func (l *Label) init() {
 	l.updateCanvas()
 	// go t.ShowIBeam()
 	// l.registerHandlers()
-
 }
 
 func (l *Label) SetBackground(c color.Color) {

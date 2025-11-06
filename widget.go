@@ -13,12 +13,12 @@ import (
 
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/BurntSushi/xgbutil"
-	"github.com/BurntSushi/xgbutil/ewmh"
 	"github.com/BurntSushi/xgbutil/mousebind"
 	"github.com/BurntSushi/xgbutil/xevent"
 	"github.com/BurntSushi/xgbutil/xgraphics"
 	"github.com/BurntSushi/xgbutil/xrect"
 	"github.com/BurntSushi/xgbutil/xwindow"
+	"github.com/lucasb-eyer/go-colorful"
 )
 
 type Pen struct {
@@ -113,7 +113,6 @@ func (ww *Widget) CreateChild(dims ...int) *Widget {
 	w = new(Widget)
 
 	w.xu = ww.xu
-	w.title = "Empty Widget"
 	r := newRect(dims...)
 	w.pwinID = ww.ID()
 	mousebind.Initialize(w.xu)
@@ -135,7 +134,7 @@ func (ww *Widget) CreateChild(dims ...int) *Widget {
 	// It's important that the map comes after setting WMGracefulClose, since
 	// the WM isn't obliged to watch updates to the WM_PROTOCOLS property.
 	// w.HandlerFunctions = new
-	w.init()
+	w.init() // Re-added w.init()
 	w.Layout = CreateLayout(0, 0, w.Width(), w.Height())
 
 	win.Map()
@@ -158,56 +157,49 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 		log.Println("Cannot create Widget without Parent Window")
 		return nil
 	}
+	log.Printf("WidgetFactory: Received dims %v", dims)
 	w.xu = p.X()
-	w.title = "Empty Widget"
-	r := newRect(dims...)
+	r := newRect(dims...) // newRect creates a Rect from dims
 	if len(dims) == 0 || len(dims) == 2 {
 		r.Width = p.Width
 		r.Height = p.Height
 	}
+	log.Printf("WidgetFactory: Calculated Rect %v", r)
 	w.pwinID = p.Id
 	mousebind.Initialize(w.xu)
-
-	// w.createRegion()
-	// CREATE CANVAS based Window
-
-	// win := w.canvas.XShowExtra("Pointer painting", true)
 
 	// Create WINDOW using usual approach
 	win, err := xwindow.Generate(w.xu)
 	if err != nil {
 		log.Fatal(err)
 	}
-	win.Create(w.pwinID, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0)
+	win.Create(w.pwinID, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0) // Here r.X and r.Y are used
 	win.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonRelease, xproto.EventMaskExposure, xproto.EventMaskEnterWindow, xproto.EventMaskLeaveWindow)
 
 	// Set _NET_WM_NAME so it looks nice.
-	err = ewmh.WmNameSet(w.xu, win.Id, w.title)
-	deBug("Could not set _NET_WM_NAME ", err)
-
-	// err = ewmh.WmWindowOpacitySet(w.xu, win.Id, .3)
-	// deBug("Could not set OPACITY ", err)
+	// err = ewmh.WmNameSet(w.xu, win.Id, w.title)
+	// deBug("Could not set _NET_WM_NAME ", err)
 
 	// Paint our image before mapping.
-
 	w.xwin = win
 	w.Rect, err = w.xwin.Geometry()
-
 	// It's important that the map comes after setting WMGracefulClose, since
 	// the WM isn't obliged to watch updates to the WM_PROTOCOLS property.
 	// w.HandlerFunctions = new
-	w.init()
+	w.init() // Re-added w.init()
 	w.Layout = CreateLayout(0, 0, w.Width(), w.Height())
 
 	win.Map()
-	xevent.KeyPressFun(w.keybHandler).Connect(w.xu, w.xwin.Id)
-
+	// ww.appendChild(w) // This line is commented out in the provided context, but it's not in the current widget.go
 	return w
 }
 
 func (w *Widget) init() {
+
 	w.EnableHover = true
+
 	w.LoadTheme("")
+
 	w.handleClose()
 
 	w.setupCanvas()
@@ -217,10 +209,14 @@ func (w *Widget) init() {
 }
 
 func (w *Widget) LoadTheme(str string) {
-	w.bgColor = color.RGBA{0, 0, 0, 255}
-	w.fgColor = color.RGBA{120, 120, 120, 20}
-	w.lineColor = color.RGBA{20, 120, 20, 255}
-	w.txtColor = color.RGBA{255, 255, 255, 255}
+
+	w.bgColor = CurrentTheme.BackgroundColor
+
+	w.fgColor = CurrentTheme.ForegroundColor
+
+	w.lineColor = CurrentTheme.LineColor
+
+	w.txtColor = CurrentTheme.TextColor
 
 }
 
@@ -374,7 +370,6 @@ func (w *Widget) onHoverEvent(X *xgbutil.XUtil, e xevent.EnterNotifyEvent) {
 }
 
 func (w *Widget) drawBackground() {
-	// irect := w.canvas.Rect
 	each := func(x, y int) xgraphics.BGRA {
 		return toBGRA(w.bgColor)
 	}
@@ -457,8 +452,30 @@ func (w *Widget) drawBorder(state WidgetState) {
 
 }
 func toBGRA(t color.Color) xgraphics.BGRA {
-	c := t.(color.RGBA)
-	return xgraphics.BGRA{c.B, c.G, c.R, c.A}
+	switch c := t.(type) {
+	case color.RGBA:
+		return xgraphics.BGRA{c.B, c.G, c.R, c.A}
+	case xgraphics.BGRA:
+		return c
+	default:
+		r, g, b, a := t.RGBA()
+		return xgraphics.BGRA{uint8(b), uint8(g), uint8(r), uint8(a)}
+	}
+}
+
+// toColorful converts a color.Color to colorful.Color.
+func toColorful(c color.Color) colorful.Color {
+	cful, _ := colorful.MakeColor(c)
+	return cful
+}
+
+// toRGBA converts a color.Color to color.RGBA.
+func toRGBA(c color.Color) color.RGBA {
+	if c == nil {
+		return color.RGBA{0, 0, 0, 0} // Return transparent black for nil colors
+	}
+	r, g, b, a := c.RGBA()
+	return color.RGBA{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8)}
 }
 
 /// Layout based Region Painting
@@ -630,6 +647,24 @@ func (w *Widget) Win() *Window {
 	win.Rect = XRectToRect(w.Rect)
 	return win
 }
+
+// WindowProvider interface defines a method to retrieve the underlying *Window.
+type WindowProvider interface {
+	Win() *Window
+}
+
+// WidgetState represents the visual state of a widget.
+type WidgetState int
+
+const (
+	StateNormal WidgetState = iota
+	StateHovered
+	StatePressed
+	StateReleased
+	StateChecked // For toggle buttons
+	StateSpecial
+	StateHoveredChecked
+)
 
 // type Window struct {
 // 	//parent *xwindow.Window

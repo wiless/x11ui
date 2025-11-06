@@ -8,15 +8,15 @@ import (
 
 // Theme holds all the color definitions for the UI.
 type Theme struct {
-	BackgroundColor color.Color
-	ForegroundColor color.Color
-	LineColor       color.Color
-	TextColor       color.Color
-	BarColor        color.Color
+	BackgroundColor        color.Color
+	ForegroundColor        color.Color
+	LineColor              color.Color
+	TextColor              color.Color
+	BarColor               color.Color
 	CheckboxCheckedColor   color.Color
 	CheckboxUncheckedColor color.Color
 	CheckboxBorderColor    color.Color
-	BaseHue         float64 // Base hue for generating color variations
+	BaseHue                float64 // Base hue for generating color variations
 }
 
 // CurrentTheme is the global instance of the active theme.
@@ -38,9 +38,9 @@ func init() {
 // createDarkTheme generates a minimalistic dark theme.
 func createDarkTheme() *Theme {
 	// Minimalistic dark gray theme
-	darkGray := color.RGBA{R: 0x28, G: 0x28, B: 0x28, A: 0xFF} // A common dark gray
-	lightGray := color.RGBA{R: 0xBB, G: 0xBB, B: 0xBB, A: 0xFF} // Light gray for foreground/text
-	mediumGray := color.RGBA{R: 0x40, G: 0x40, B: 0x40, A: 0xFF} // Medium gray for lines/borders
+	darkGray := color.RGBA{R: 0x28, G: 0x28, B: 0x28, A: 0xFF}    // A common dark gray
+	lightGray := color.RGBA{R: 0xBB, G: 0xBB, B: 0xBB, A: 0xFF}   // Light gray for foreground/text
+	mediumGray := color.RGBA{R: 0x40, G: 0x40, B: 0x40, A: 0xFF}  // Medium gray for lines/borders
 	accentColor := color.RGBA{R: 0x60, G: 0x60, B: 0x60, A: 0xFF} // A subtle accent for bars/checked states
 
 	return &Theme{
@@ -49,7 +49,7 @@ func createDarkTheme() *Theme {
 		LineColor:              mediumGray,
 		TextColor:              color.RGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF}, // White text
 		BarColor:               accentColor,
-		CheckboxCheckedColor:   accentColor,
+		CheckboxCheckedColor:   color.RGBA{R: 0x00, G: 90, B: 30, A: 0xFF}, // Bright Green
 		CheckboxUncheckedColor: darkGray,
 		CheckboxBorderColor:    mediumGray,
 		BaseHue:                0.0, // Not using hue for this minimalistic theme
@@ -70,10 +70,10 @@ func createLightTheme() *Theme {
 		TextColor:       color.RGBA{0, 0, 0, 255}, // Pure black for readability
 		BarColor:        colorful.Hsl(hue-60, saturation, lightness*0.7).Clamped(),
 
-		CheckboxCheckedColor:   colorful.Hsl(hue, saturation*1.5, lightness*0.4).Clamped(), // More saturated and darker for light theme
+		CheckboxCheckedColor:   colorful.Hsl(hue, saturation*1.5, lightness*0.4).Clamped(),  // More saturated and darker for light theme
 		CheckboxUncheckedColor: colorful.Hsl(hue, saturation*0.2, lightness*0.95).Clamped(), // Very light, less saturated
-		CheckboxBorderColor:    colorful.Hsl(hue, saturation, lightness*0.7).Clamped(), // Slightly darker border
-		BaseHue:         hue,
+		CheckboxBorderColor:    colorful.Hsl(hue, saturation, lightness*0.7).Clamped(),      // Slightly darker border
+		BaseHue:                hue,
 	}
 }
 
@@ -81,7 +81,6 @@ func createLightTheme() *Theme {
 func DarkThemeWithAccent(accent color.Color) *Theme {
 	accentC, _ := colorful.MakeColor(accent)
 	hue, _, _ := accentC.Hsl()
-
 	// Start with the base dark theme colors
 	theme := createDarkTheme()
 
@@ -97,15 +96,20 @@ func DarkThemeWithAccent(accent color.Color) *Theme {
 // LightThemeWithAccent generates a light theme with a specified accent color.
 func LightThemeWithAccent(accent color.Color) *Theme {
 	accentC, _ := colorful.MakeColor(accent)
-	hue, _, _ := accentC.Hsl()
+	hue, sat, light := accentC.Hsl() // Get HSL of accent
 
 	// Start with the base light theme colors
 	theme := createLightTheme()
 
 	// Adjust colors based on the accent hue
-	theme.ForegroundColor = colorful.Hsl(hue, 0.7, 0.3).Clamped()
-	theme.BarColor = colorful.Hsl(hue, 0.6, 0.4).Clamped()
-	theme.CheckboxCheckedColor = colorful.Hsl(hue, 0.8, 0.5).Clamped()
+	// Make ForegroundColor a darker version of the accent for contrast
+	theme.ForegroundColor = colorful.Hsl(hue, sat, light*0.6).Clamped()
+	// Make BarColor the accent color itself for button backgrounds
+	theme.BarColor = accentC.Clamped()
+	// Make TextColor the accent color
+	theme.TextColor = accentC.Clamped()
+	// CheckboxCheckedColor can be a slightly darker/more saturated version of accent
+	theme.CheckboxCheckedColor = colorful.Hsl(hue, 1.0, 0.3).Clamped()
 	theme.BaseHue = hue
 
 	return theme
