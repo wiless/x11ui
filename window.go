@@ -89,7 +89,7 @@ func RegisterFont(path, name string) {
 func SetResourcePath(path, fontName string) error {
 	if fontName == "" {
 		fontName = "FreeMonoBold.ttf"
-		log.Printf("Setting Default Font %v", fontName)
+	
 	}
 	// Opening from embedded FS
 	fr, e := content.Open(filepath.Join("fonts", fontName))
@@ -105,7 +105,7 @@ func SetResourcePath(path, fontName string) error {
 
 	// draw2d.SetFontCache(fc)
 	// dsFont = draw2d.GetFont(systemFData)
-	log.Printf("Default draw2D FontFolder %v", draw2d.GetFontFolder())
+
 
 	return nil
 }
@@ -157,13 +157,13 @@ func (w *Window) Click() {
 // OnClick sets a simple click handler for the window.
 func (w *Window) OnClick(fn func()) {
 	w.clk = fn
-	log.Println("Registering ", w.Title(), "Click to ", fn)
+
 }
 
 // OnClickAdv sets an advanced click handler that receives the window and click coordinates.
 func (w *Window) OnClickAdv(fn OnClickFn) {
 	w.clkAdv = fn
-	log.Println("Registering Adv Click ", w.Title(), "Click to ", fn)
+
 }
 
 func (w *Window) Show() {
@@ -212,7 +212,7 @@ func (w *Window) onHoverEvent(X *xgbutil.XUtil, e xevent.EnterNotifyEvent) {
 	} else {
 		w.rePaint(StateHovered)
 	}
-	log.Println("On Hover ", w.Title())
+
 }
 
 // onLeaveEvent is the event handler for when the mouse leaves the window's area.
@@ -288,7 +288,7 @@ func (w *Window) mouseHandler(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
 	case 1: // left click
 		w.rePaint(StatePressed)
 		if w.clk == nil {
-			log.Println(w.Title(), " Clicked() ", e.String())
+
 		}
 	default:
 		// log.Println(w.Title(), "Some Button Clicked() ", e.Detail)
@@ -377,7 +377,7 @@ func (w *Window) drawView(s WidgetState) {
 
 // drawBackground draws the background of the window based on its state.
 func (w *Window) drawBackground(s WidgetState) {
-	log.Printf("Window.drawBackground: Drawing for state %v", s)
+
 	r := w.ImageRect()
 	dest := image.NewRGBA(r)
 	gc := draw2dimg.NewGraphicContext(dest)
@@ -401,7 +401,7 @@ func (w *Window) drawBackground(s WidgetState) {
 		fillColor = toRGBA(toColorful(CurrentTheme.CheckboxCheckedColor).BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped())
 		strokeColor = toRGBA(CurrentTheme.LineColor)
 	}
-	log.Printf("Window.drawBackground: State %v, FillColor %v, StrokeColor %v", s, fillColor, strokeColor)
+
 	gc.SetFillColor(fillColor)
 	gc.SetStrokeColor(strokeColor)
 
@@ -532,7 +532,7 @@ func (c *Container) SetSpacing(dx, dy int) {
 
 // rePaint redraws the window with a given state, if it's a button.
 func (w *Window) rePaint(s WidgetState) {
-	log.Printf("rePaint called for window: %s, isButton: %v", w.title, w.isButton)
+
 	if w.isButton == true {
 		w.drawBackground(s)
 		w.finishPaint(w.ximg)
@@ -598,7 +598,7 @@ func (w *Window) AnimateProperty(d time.Duration, start, stop Property) {
 
 // Animate performs a simple resize animation.
 func (w *Window) Animate(t int) {
-	log.Println("Animate Window ", w.Title())
+
 	tt := time.NewTicker(1000 * time.Millisecond)
 	ww := 10
 	hh := 10
@@ -620,7 +620,7 @@ func (w *Window) Animate(t int) {
 
 // Draw handles expose events to redraw parts of the window.
 func (w *Window) Draw(X *xgbutil.XUtil, e xevent.ExposeEvent) {
-	log.Printf("Draw: Expose event received for window '%s' (ID: %d)", w.Title(), w.Id)
+
 	// For now, simply repaint the entire window on expose events.
 	// More optimized drawing could be implemented later (e.g., only redraw exposed region).
 	w.PaintOnce()
@@ -822,10 +822,10 @@ func (w *Window) Align(alignment Alignment) {
 		return
 	}
 
-	log.Printf("Parent Geometry: X=%d, Y=%d, Width=%d, Height=%d", parentGeom.X(), parentGeom.Y(), parentGeom.Width(), parentGeom.Height())
+
 
 	windowGeom := w.Rect
-	log.Printf("Window Geometry: X=%d, Y=%d, Width=%d, Height=%d", windowGeom.X, windowGeom.Y, windowGeom.Width, windowGeom.Height)
+
 
 	newX, newY := windowGeom.X, windowGeom.Y
 
@@ -859,7 +859,7 @@ func (w *Window) Align(alignment Alignment) {
 		newY = parentGeom.Y() + parentGeom.Height() - windowGeom.Height
 	}
 
-	log.Printf("Aligning %s to %v: Calculated newX=%d, newY=%d", w.Title(), alignment, newX, newY)
+
 	w.Move(newX-parentGeom.X(), newY-parentGeom.Y())
 }
 
@@ -938,7 +938,7 @@ func (w *Window) UpdatePlot(img image.Image) {
 	// ximg = xgraphics.NewConvert(w.X(), xgraphics.Scale(img, rr.Dx(), rr.Dy()))
 
 	w.ximg.XSurfaceSet(w.Id)
-	log.Print("Redrawing ", rr)
+
 	w.ximg.XPaintRects(w.Id, image.Rect(0, 0, rr.Dx(), rr.Dy()))
 	w.ximg.XDraw()
 
@@ -947,7 +947,7 @@ func (w *Window) UpdatePlot(img image.Image) {
 // ReDrawImage redraws the window from its raw image buffer.
 func (w *Window) ReDrawImage() {
 	if w.rawimage == nil {
-		log.Print("Create Raw Image .. first")
+	
 		return
 	}
 	// log.Printf("Bounds ", img.Bounds(), "window rects", w.Rect)

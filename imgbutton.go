@@ -161,11 +161,11 @@ func (t *ImgButton) addPicture() {
 	irect := image.Rectangle{image.Point{0, 0}, image.Point{t.Width(), t.Height()}}
 
 	inset := irect.Inset(2)
-	log.Println(irect, inset)
+
 
 	mx := min(inset.Dx(), inset.Dy())
 	simg := xgraphics.Scale(img, mx, mx)
-	log.Print(inset, irect)
+
 
 	// si := t.canvas.SubImage(inset).(*xgraphics.Image)
 	// xg := xgraphics.NewConvert(t.xu, )

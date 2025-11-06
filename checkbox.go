@@ -157,7 +157,7 @@ func (b boxRegion) PaintRegion() *image.RGBA {
 
 	iconsize := GetIRect(b.Width, b.Height)
 	img := image.NewRGBA(iconsize)
-	log.Println("Region ", b.Caption, r)
+
 	// thunderimg, err := draw2dimg.LoadFromPngFile("res/charge.png")
 	// fd, _ := os.Open("res/charge.png")
 	// cimage, err := png.Decode(fd)
@@ -199,7 +199,7 @@ func (b boxRegion) PaintRegion() *image.RGBA {
 		x0, y0, w, h := gc.GetStringBounds(b.Caption)
 		px := float64(r.Width/2) - w/2
 		py := float64(r.Height/2) - h/2
-		log.Println(x0, y0)
+
 		gc.StrokeStringAt(b.Caption, float64(px), float64(py))
 	}
 

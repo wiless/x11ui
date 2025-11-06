@@ -147,7 +147,7 @@ func NewApplication(title string, width, height int, resizeable, fullApplication
 
 	s.keycallbacks = s.keybHandler
 	xevent.KeyPressFun(s.keybHandler).Connect(s.xu, s.AppWin().Id)
-	log.Printf("KEYBINDS %v", s.AppWin().Window.X.Keybinds)
+
 	// var mkey xgbutil.KeyKey
 
 	mousebind.ButtonPressFun(s.mouseHandler).Connect(s.xu, s.appWin.Id, "1", false, false)
@@ -188,7 +188,7 @@ func (s *Application) mouseReleaseHandler(X *xgbutil.XUtil, e xevent.ButtonRelea
 // keybHandler processes keyboard press events for the application.
 func (s *Application) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	if s.xu != X {
-		log.Println("\n I am not the write handler !!")
+
 		return
 	}
 	modStr := keybind.ModifierString(e.State)
@@ -205,7 +205,7 @@ func (s *Application) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 
 	if fn, ok := s.KeyMaps[finalstr]; ok {
 		if s.Debug {
-			log.Printf("Caught Key : %s", finalstr)
+
 		}
 		fn()
 	} else {
@@ -444,7 +444,7 @@ func (s *Application) NewFloatingWindow(title string, dims ...int) *Window {
 
 func (s *Application) Restore() {
 	// _NET_WM_ACTION_SHADE
-	log.Printf("Restoring Window %s", s.appWin.Title())
+
 	// err := ewmh.WmStateReq(s.xu, s.appWin.Id, ewmh.StateToggle, "_NET_WM_ACTION_SHADE")
 	// if err != nil {
 	// 	log.Fatal(err)
@@ -461,14 +461,14 @@ func (s *Application) Restore() {
 // https://specifications.freedesktop.org/wm-spec/1.3/ar01s05.html
 func (s *Application) Hide() {
 	// _NET_WM_STATE_HIDDEN
-	log.Printf("Hiding Window %s", s.appWin.Title())
+
 
 	// Get the _NET_WM_STATE_HIDDEN atom.
 	hiddenAtom, err := ewmh.WmStateGet(s.xu, s.appWin.Id)
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Hidden Atom is %v", hiddenAtom)
+
 
 	ewmh.WmNameSet(s.xu, s.appWin.Id, "Minimize Example")
 
@@ -566,7 +566,7 @@ func (s *Application) newWindow(p xproto.Window, r Rect) *Window {
 	cb1 := mousebind.ButtonPressFun(w.mouseHandler)
 
 	if p == 0 {
-		log.Println("Registering right click also")
+
 		err = cb1.Connect(s.xu, win.Id, "2", false, true)
 	} else {
 		err = cb1.Connect(s.xu, win.Id, "1", false, true)

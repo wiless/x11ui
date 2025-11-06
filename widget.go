@@ -157,14 +157,14 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 		log.Println("Cannot create Widget without Parent Window")
 		return nil
 	}
-	log.Printf("WidgetFactory: Received dims %v", dims)
+
 	w.xu = p.X()
 	r := newRect(dims...) // newRect creates a Rect from dims
 	if len(dims) == 0 || len(dims) == 2 {
 		r.Width = p.Width
 		r.Height = p.Height
 	}
-	log.Printf("WidgetFactory: Calculated Rect %v", r)
+
 	w.pwinID = p.Id
 	mousebind.Initialize(w.xu)
 
@@ -173,7 +173,7 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("WidgetFactory: Created window with ID: %d", win.Id)
+
 	win.Create(w.pwinID, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0) // Here r.X and r.Y are used
 	win.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonRelease, xproto.EventMaskExposure, xproto.EventMaskEnterWindow, xproto.EventMaskLeaveWindow)
 
@@ -294,8 +294,8 @@ func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 		finalstr = fmt.Sprint(modStr, keyStr)
 	}
 	_ = finalstr
-	log.Println("Event code is ", e.Detail)
-	log.Printf("%s MAPS  to Keycode %v ", finalstr, keybind.StrToKeycodes(w.xu, finalstr))
+
+
 
 	// if fn, ok := s.KeyMaps[finalstr]; ok {
 	// 	if s.Debug {
@@ -303,13 +303,13 @@ func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	// 	}
 	// 	fn()
 	// }
-	log.Println("Widget ", finalstr)
+
 
 }
 
 func (w *Widget) mouseClick(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
 	if w.HandlerFunctions.ClkFn == nil {
-		log.Println("Widget :Mouse clicked at ", e.EventX, e.EventY)
+	
 	} else {
 		if !w.modal {
 			go w.ClkFn()

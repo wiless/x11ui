@@ -75,19 +75,19 @@ func (t *TextBox) SetReadOnly(readonly bool) {
 
 	if !t.readOnly && readonly {
 		keybind.Detach(t.xu, t.xwin.Id)
-		log.Println("Enable readonly")
+
 		t.readOnly = readonly
 	} else if t.readOnly && !readonly {
 		t.readOnly = readonly
 		xevent.KeyPressFun(t.keybHandler).Connect(t.xu, t.xwin.Id)
-		log.Println("Capture KEYBOARD")
+
 
 	}
 }
 
 func (t *TextBox) registerHandlers() {
 	if !t.readOnly {
-		log.Println("Will capture keys : ", t.readOnly)
+
 		xevent.KeyPressFun(t.keybHandler).Connect(t.xu, t.xwin.Id)
 	}
 }
@@ -102,11 +102,11 @@ func (t *TextBox) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	if modStr != "" {
 		// finalstr := keyStr
 		// finalstr = fmt.Sprint(modStr, keyStr)
-		log.Printf("\n 1 MODSTR %v : KEYSTR '%v' ", modStr, keyStr)
+
 		t.handleKeyboard(keyStr)
 	} else {
 		// finalstr = fmt.Sprint(modStr, keyStr)
-		log.Printf("\n 2 MODSTR %v : KEYSTR '%v' ", modStr, keyStr)
+
 		t.handleKeyboard(keyStr)
 	}
 	// log.Println("Event code is ", e.Detail)
@@ -242,7 +242,7 @@ func (t *TextBox) handleKeyboard(str string) {
 		return
 	}
 	if len(str) != 1 {
-		log.Println("I am returning more than 1 Char")
+
 		return
 	}
 
@@ -258,7 +258,7 @@ func (t *TextBox) handleKeyboard(str string) {
 	// t.gc.FillStringAt(str, t.cursor, t.line+t.linespace)
 
 	nx, ny, _ := t.canvas.Text(int(t.cursor), int(t.line), t.txtColor, 12, systemFont, str)
-	log.Println("nx,ny", nx, ny)
+
 	t.cursor = nx
 
 	if t.cursor > (t.Width() - int(t.margin)) {
@@ -295,7 +295,7 @@ func (t *TextBox) init() {
 	// cw, ch := xgraphics.Extents(systemFont, 12, "W")
 	// log.Println("extends ", cw, ch)
 	cw, ch := xgraphics.TextMaxExtents(systemFont, 12, "W")
-	log.Println("extends ", cw, ch)
+
 	t.linespace = ch
 	t.charSpace = cw
 	t.readOnly = true

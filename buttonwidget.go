@@ -32,7 +32,7 @@ func NewButtonWidget(title string, p *Window, dims ...int) *ButtonWidget {
 	if p == nil {
 		log.Fatal("Cannot Create ButtonWidget without Application")
 	}
-	log.Printf("NewButtonWidget: Creating button '%s' with dims %v", title, dims)
+
 
 	bw := &ButtonWidget{
 		text:      title,
@@ -171,7 +171,7 @@ func (bw *ButtonWidget) updateButtonAppearance() {
 			currentLineColor = CurrentTheme.LineColor
 		}
 	}
-	log.Printf("ButtonWidget.updateButtonAppearance: state=%v, currentBgColor=%v, currentLineColor=%v", bw.state, currentBgColor, currentLineColor)
+
 
 	// Set the embedded Widget's colors
 	bw.Widget.bgColor = currentBgColor
@@ -183,7 +183,7 @@ func (bw *ButtonWidget) updateButtonAppearance() {
 	// Draw text
 	tw, th := xgraphics.Extents(systemFont, bw.fsize, bw.text)
 	xpos, ypos := (bw.Width()-tw)/2, (bw.Height()-th)/2
-	log.Printf("ButtonWidget.updateButtonAppearance: Drawing text '%s' at (%d, %d) with color %v and font size %f", bw.text, xpos, ypos, bw.textColor, bw.fsize)
+
 	bw.canvas.Text(xpos, ypos, bw.textColor, bw.fsize, systemFont, bw.text)
 
 	// Draw border
