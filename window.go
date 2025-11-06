@@ -490,6 +490,10 @@ func (c *Container) RelayoutChildren() {
 
 	for _, wp := range c.children {
 		child := wp.Win() // Get the underlying *Window
+
+		// Log original position
+		log.Printf("RelayoutChildren: Child '%s' original absolute position: X=%d, Y=%d, W=%d, H=%d", child.Title(), child.Rect.X, child.Rect.Y, child.Rect.Width, child.Rect.Height)
+
 		var newRect Rect // absolute coordinates
 		newRect.Width = child.Rect.Width
 		newRect.Height = child.Rect.Height
@@ -509,7 +513,15 @@ func (c *Container) RelayoutChildren() {
 		}
 
 		paddedRect := newRect.WithPadding(c.hpadding, c.vpadding)
-		child.Move(paddedRect.X - c.Rect.X, paddedRect.Y - c.Rect.Y)
+		
+		// Calculate relative new position for logging
+		relativeNewX := paddedRect.X - c.Rect.X
+		relativeNewY := paddedRect.Y - c.Rect.Y
+
+		// Log new calculated relative position
+		log.Printf("RelayoutChildren: Child '%s' calculated relative new position: X=%d, Y=%d, W=%d, H=%d", child.Title(), relativeNewX, relativeNewY, paddedRect.Width, paddedRect.Height)
+
+		child.Move(relativeNewX, relativeNewY)
 		if c.layoutDirection == LayoutVer {
 			child.Resize(paddedRect.Width, child.Rect.Height)
 		} else if c.layoutDirection == LayoutHor {
