@@ -196,7 +196,7 @@ func (b boxRegion) PaintRegion() *image.RGBA {
 
 	if b.Caption != "" {
 		// w, h := xgraphics.TextMaxExtents(systemFont, 12, b.Caption)
-		x0, y0, w, h := gc.GetStringBounds(b.Caption)
+		_, _, w, h := gc.GetStringBounds(b.Caption)
 		px := float64(r.Width/2) - w/2
 		py := float64(r.Height/2) - h/2
 

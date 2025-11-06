@@ -464,7 +464,7 @@ func (s *Application) Hide() {
 
 
 	// Get the _NET_WM_STATE_HIDDEN atom.
-	hiddenAtom, err := ewmh.WmStateGet(s.xu, s.appWin.Id)
+	_, err := ewmh.WmStateGet(s.xu, s.appWin.Id)
 	if err != nil {
 		panic(err)
 	}
@@ -637,7 +637,7 @@ func (a *Application) AddButton(caption string, geo ...int) *Window {
 	}
 
 	paddedRect := r.WithPadding(a.hpadding, a.vpadding)
-	obj := NewButton(caption, a.AppWin(), paddedRect.array()...)
+	obj := NewButton(caption, a.AppWin(), paddedRect.X-a.AppWin().Rect.X, paddedRect.Y-a.AppWin().Rect.Y, paddedRect.Width, paddedRect.Height)
 	a.pvsChildRect = r
 	return obj
 }
@@ -658,7 +658,7 @@ func (a *Application) AddToggleBtn(caption string, geo ...int) *Window {
 	}
 
 	paddedRect := r.WithPadding(a.hpadding, a.vpadding)
-	obj := NewToggleButton(caption, a.AppWin(), paddedRect.array()...)
+	obj := NewToggleButton(caption, a.AppWin(), paddedRect.X-a.AppWin().Rect.X, paddedRect.Y-a.AppWin().Rect.Y, paddedRect.Width, paddedRect.Height)
 	a.pvsChildRect = r
 	return obj
 }

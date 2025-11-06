@@ -181,8 +181,7 @@ func (t *TextBox) AppendLine(str string) {
 		return
 	}
 
-	nx, ny, _ := t.canvas.Text(int(t.cursor), int(t.line), t.txtColor, 12, systemFont, str)
-	_ = ny
+	nx, _, _ := t.canvas.Text(int(t.cursor), int(t.line), t.txtColor, 12, systemFont, str)
 	// log.Println("nx,ny", nx, ny)
 	t.cursor = nx
 
@@ -257,7 +256,7 @@ func (t *TextBox) handleKeyboard(str string) {
 	// t.gc.SetFillColor(color.Black)
 	// t.gc.FillStringAt(str, t.cursor, t.line+t.linespace)
 
-	nx, ny, _ := t.canvas.Text(int(t.cursor), int(t.line), t.txtColor, 12, systemFont, str)
+	nx, _, _ := t.canvas.Text(int(t.cursor), int(t.line), t.txtColor, 12, systemFont, str)
 
 	t.cursor = nx
 
