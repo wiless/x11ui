@@ -142,6 +142,11 @@ func (t *TextBox) SetText(txt string) {
 
 }
 
+func (t *TextBox) SetTextColor(c color.Color) {
+	t.Widget.SetTextColor(c)
+	t.SetText(t.title)
+}
+
 // lineWidth returns the number of characters that can be accomodated in a line
 func (t *TextBox) lineWidth() int {
 	return (t.Width() - int(t.margin))

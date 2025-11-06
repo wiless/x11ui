@@ -86,6 +86,11 @@ func (l *Label) SetLabel(lbl string) {
 	l.updateLabel(StateNormal)
 }
 
+func (l *Label) SetTextColor(c color.Color) {
+	l.Widget.SetTextColor(c)
+	l.updateLabel(StateNormal)
+}
+
 func (t *Label) updateLabel(state WidgetState) {
 	// log.Println("updateing text")
 	// W, H := float64(t.Width()), float64(t.Height())

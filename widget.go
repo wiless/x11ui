@@ -97,6 +97,10 @@ func (w *Widget) SetFontSize(fsize int) {
 
 }
 
+func (w *Widget) SetTextColor(c color.Color) {
+	w.txtColor = c
+}
+
 func (ww *Widget) CreateChild(dims ...int) *Widget {
 	var w *Widget
 	var err error
@@ -211,7 +215,7 @@ func (w *Widget) LoadTheme(str string) {
 	w.bgColor = color.RGBA{0, 0, 0, 255}
 	w.fgColor = color.RGBA{120, 120, 120, 20}
 	w.lineColor = color.RGBA{20, 120, 20, 255}
-	w.txtColor = color.RGBA{255, 255, 0, 255}
+	w.txtColor = color.RGBA{255, 255, 255, 255}
 
 }
 
