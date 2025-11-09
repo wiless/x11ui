@@ -40,6 +40,7 @@ type HandlerFunctions struct {
 	ClkFn       func()
 	HoverFn     func()
 	LeaveFn     func()
+	KeybFn      func(key string)
 	DragStartFn func(w *Widget, global, local image.Point) bool
 	DragFn      func(w *Widget, global, local image.Point) bool
 	DragEndFn   func(w *Widget, global, local image.Point) bool
@@ -69,7 +70,7 @@ type Widget struct {
 	border    float64
 	title     string
 	*Layout
-	fsize  int
+	fsize  float64
 	childs []*Widget
 	/// Handlers
 	HandlerFunctions
@@ -94,9 +95,22 @@ func (w *Widget) SetBackground(c color.Color) {
 	w.bgColor = c
 }
 
-func (w *Widget) SetFontSize(fsize int) {
+func (w *Widget) SetFontSize(fsize float64) {
 	w.fsize = fsize
+}
 
+func (w *Widget) SetChildrenFontSize(fsize float64) {
+	// Propagate font size to children that implement SetFontSize
+	for _, child := range w.childs {
+		if fsSetter, ok := interface{}(child).(FontSizeSetter); ok {
+			fsSetter.SetFontSize(fsize)
+		}
+	}
+}
+
+// FontSizeSetter interface for widgets that can have their font size set.
+type FontSizeSetter interface {
+	SetFontSize(float64)
 }
 
 func (w *Widget) SetTextColor(c color.Color) {
@@ -171,6 +185,7 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 	var w *Widget
 	var err error
 	w = new(Widget)
+	w.xu = p.X() // Set xu immediately
 	w.modal = false
 	DEBUG_LEVEL = 1
 	if p == nil {
@@ -178,11 +193,16 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 		return nil
 	}
 
-	w.xu = p.X()
 	r := newRect(dims...) // newRect creates a Rect from dims
 	if len(dims) == 0 || len(dims) == 2 {
 		r.Width = p.Width
 		r.Height = p.Height
+	}
+	if r.Width == 0 {
+		r.Width = 1
+	}
+	if r.Height == 0 {
+		r.Height = 1
 	}
 
 	w.pwinID = p.Id
@@ -194,6 +214,7 @@ func WidgetFactory(p *Window, dims ...int) *Widget {
 		log.Fatal(err)
 	}
 
+	// Create transparent window
 	win.Create(w.pwinID, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0) // Here r.X and r.Y are used
 	win.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonRelease, xproto.EventMaskExposure, xproto.EventMaskEnterWindow, xproto.EventMaskLeaveWindow)
 
@@ -304,7 +325,7 @@ func (w *Widget) Align(alignment Alignment) {
 }
 
 func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
-
+	log.Printf("Key press event received for widget %s (ID: %d), key: %s", w.title, w.xwin.Id, keybind.LookupString(X, e.State, e.Detail))
 	modStr := keybind.ModifierString(e.State)
 	keyStr := keybind.LookupString(X, e.State, e.Detail)
 
@@ -314,9 +335,14 @@ func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	if modStr != "" {
 		finalstr = fmt.Sprint(modStr, keyStr)
 	}
-	_ = finalstr
+	if w.KeybFn != nil {
+		w.KeybFn(finalstr)
+	}
 
-
+	// Propagate to parent window if it has a KeybFn
+	if w.Win() != nil && w.Win().keybFn != nil {
+		w.Win().keybFn(finalstr)
+	}
 
 	// if fn, ok := s.KeyMaps[finalstr]; ok {
 	// 	if s.Debug {
@@ -325,12 +351,11 @@ func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	// 	fn()
 	// }
 
-
 }
 
 func (w *Widget) mouseClick(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
 	if w.HandlerFunctions.ClkFn == nil {
-	
+
 	} else {
 		if !w.modal {
 			go w.ClkFn()
@@ -346,11 +371,12 @@ func (w *Widget) AttachHandlers() *Widget {
 	// mousebind.ButtonPressFun(w.mouseHandler).Connect(X, win.Id, "1", false, true)
 	// mousebind.ButtonReleaseFun(w.mouseReleaseHandler).Connect(X, win.Id, "1", false, true)
 
-			xevent.EnterNotifyFun(w.onHoverEvent).Connect(w.xu, w.xwin.Id)
+	xevent.EnterNotifyFun(w.onHoverEvent).Connect(w.xu, w.xwin.Id)
 
-			xevent.LeaveNotifyFun(w.onLeaveEvent).Connect(w.xu, w.xwin.Id)
+	xevent.LeaveNotifyFun(w.onLeaveEvent).Connect(w.xu, w.xwin.Id)
 
-			mousebind.ButtonPressFun(w.mouseClick).Connect(w.xu, w.xwin.Id, "1", false, true)
+	mousebind.ButtonPressFun(w.mouseClick).Connect(w.xu, w.xwin.Id, "1", false, true)
+	xevent.KeyPressFun(w.keybHandler).Connect(w.xu, w.xwin.Id)
 	return w
 }
 

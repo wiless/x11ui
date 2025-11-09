@@ -89,7 +89,7 @@ func RegisterFont(path, name string) {
 func SetResourcePath(path, fontName string) error {
 	if fontName == "" {
 		fontName = "FreeMonoBold.ttf"
-	
+
 	}
 	// Opening from embedded FS
 	fr, e := content.Open(filepath.Join("fonts", fontName))
@@ -106,7 +106,6 @@ func SetResourcePath(path, fontName string) error {
 	// draw2d.SetFontCache(fc)
 	// dsFont = draw2d.GetFont(systemFData)
 
-
 	return nil
 }
 
@@ -119,6 +118,7 @@ type Window struct {
 	*xwindow.Window
 	clkAdv OnClickFn
 	clk    func()
+	keybFn func(key string)
 	Rect
 	prevRect         Rect
 	onSizeChange     func(w, h int)
@@ -489,8 +489,6 @@ func (w *Window) drawLabel(g *xgraphics.Image, str string, textColor color.Color
 // In drawView, when calling w.drawLabel(w.ximg, w.title, margin, margin):
 // w.drawLabel(w.ximg, w.title, nil, margin, margin)
 
-
-
 type Container struct {
 	Window // Embed the existing Window struct directly
 
@@ -502,8 +500,8 @@ type Container struct {
 
 	hpadding, vpadding int
 
-	pvsChildRect Rect // To keep track of the previous child's position for cascading
-
+	pvsChildRect    Rect // To keep track of the previous child's position for cascading
+	defaultFontSize float64
 }
 
 func (c *Container) AddWidget(widget WindowProvider) {
@@ -527,19 +525,40 @@ func (c *Container) RelayoutChildren() {
 		prevRect.Height = -c.vspacing
 	}
 
+	nChildren := len(c.children)
+	if nChildren == 0 {
+		return
+	}
+
+	// Calculate available space, accounting for spacing between children
+	availableWidth := c.Rect.Width - (nChildren-1)*c.hspacing
+	availableHeight := c.Rect.Height - (nChildren-1)*c.vspacing
+
 	for _, wp := range c.children {
 		child := wp.Win() // Get the underlying *Window
 
 		var newRect Rect // absolute coordinates
-		newRect.Width = child.Rect.Width
-		newRect.Height = child.Rect.Height
 
+		// Recalculate size based on container's dimensions
+		switch c.layoutDirection {
+		case LayoutHor:
+			newRect.Width = availableWidth / nChildren
+			newRect.Height = c.Rect.Height
+		case LayoutVer:
+			newRect.Width = c.Rect.Width
+			newRect.Height = availableHeight / nChildren
+		default:
+			newRect.Width = child.Rect.Width
+			newRect.Height = child.Rect.Height
+		}
+
+		// Recalculate position
 		switch c.layoutDirection {
 		case LayoutHor:
 			newRect.X = prevRect.X + prevRect.Width + c.hspacing
-			newRect.Y = prevRect.Y
+			newRect.Y = c.Rect.Y
 		case LayoutVer:
-			newRect.X = prevRect.X
+			newRect.X = c.Rect.X
 			newRect.Y = prevRect.Y + prevRect.Height + c.vspacing
 		default:
 			newRect.X = c.Rect.X + child.Rect.X
@@ -547,19 +566,14 @@ func (c *Container) RelayoutChildren() {
 		}
 
 		paddedRect := newRect.WithPadding(c.hpadding, c.vpadding)
-		
+
 		// Calculate relative new position for logging
 		relativeNewX := paddedRect.X - c.Rect.X
 		relativeNewY := paddedRect.Y - c.Rect.Y
 
 		child.Move(relativeNewX, relativeNewY)
-		if c.layoutDirection == LayoutVer {
-			child.Resize(paddedRect.Width, child.Rect.Height)
-		} else if c.layoutDirection == LayoutHor {
-			child.Resize(child.Rect.Width, paddedRect.Height)
-		} else {
-			child.Resize(paddedRect.Width, paddedRect.Height)
-		}
+		child.Resize(paddedRect.Width, paddedRect.Height)
+
 		prevRect = newRect
 		wp.Paint()
 	}
@@ -569,6 +583,32 @@ func (c *Container) RelayoutChildren() {
 func (c *Container) SetSpacing(dx, dy int) {
 	c.hspacing, c.vspacing = dx, dy
 	c.RelayoutChildren() // Relayout after changing spacing
+}
+
+func (c *Container) AddButton(caption string, geo ...int) *ButtonWidget {
+	var res *ButtonWidget
+
+	if len(geo) == 0 {
+		res = NewButtonWidget(caption, &c.Window, 0, 0, 0, 0)
+	} else {
+		res = NewButtonWidget(caption, &c.Window, geo...)
+	}
+	res.SetFontSize(c.defaultFontSize) // Set font size from container's default
+	c.AddWidget(res)
+	return res
+}
+
+func (c *Container) AddToggleBtn(caption string, geo ...int) *ButtonWidget {
+	btn := c.AddButton(caption, geo...)
+	btn.SetToggle(true)
+	return btn
+}
+
+func (c *Container) SetFontSize(size float64) {
+	c.defaultFontSize = size
+	if c.widget != nil {
+		c.widget.SetChildrenFontSize(size)
+	}
 }
 
 // WidgetState represents the current state of a UI widget
@@ -713,19 +753,19 @@ func newWindow(X *xgbutil.XUtil, p *Window, t string, dims ...int) *Window {
 
 	// mask := xproto.GcForeground | xproto.GcGraphicsExposures
 	// values := []uint32{s.BlackPixel, 0}
-		win.Create(parent, r.X, r.Y, r.Width, r.Height, 0)
-		win.Map()
-	
-		// win.Create(parent, r.X, r.Y, r.Width, r.Height, mask, values...)
-		if err != nil {
-			log.Fatal(err)
-		}
-		// win.MoveResize(r.X, r.Y, r.Width, r.Height)
-		// if p == nil {
-		// 	win.Change(xproto.CwBackPixel, 0x000000) // Set root window background to black
-		// } else {
-		// win.Change(xproto.CwBackPixel, 0xFFAA00)
-		// }
+	win.Create(parent, r.X, r.Y, r.Width, r.Height, 0)
+	win.Map()
+
+	// win.Create(parent, r.X, r.Y, r.Width, r.Height, mask, values...)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// win.MoveResize(r.X, r.Y, r.Width, r.Height)
+	// if p == nil {
+	// 	win.Change(xproto.CwBackPixel, 0x000000) // Set root window background to black
+	// } else {
+	// win.Change(xproto.CwBackPixel, 0xFFAA00)
+	// }
 
 	//if p == nil {
 	win.Listen(xproto.EventMaskKeyPress, xproto.EventMaskKeyRelease, xproto.EventMaskButtonPress, xproto.EventMaskButtonRelease, xproto.EventMaskExposure, xproto.EventMaskEnterWindow, xproto.EventMaskLeaveWindow, xproto.EventMaskKeyPress)
@@ -880,10 +920,7 @@ func (w *Window) Align(alignment Alignment) {
 		return
 	}
 
-
-
 	windowGeom := w.Rect
-
 
 	newX, newY := windowGeom.X, windowGeom.Y
 
@@ -916,7 +953,6 @@ func (w *Window) Align(alignment Alignment) {
 		newX = parentGeom.X() + parentGeom.Width() - windowGeom.Width
 		newY = parentGeom.Y() + parentGeom.Height() - windowGeom.Height
 	}
-
 
 	w.Move(newX-parentGeom.X(), newY-parentGeom.Y())
 }
@@ -1005,7 +1041,7 @@ func (w *Window) UpdatePlot(img image.Image) {
 // ReDrawImage redraws the window from its raw image buffer.
 func (w *Window) ReDrawImage() {
 	if w.rawimage == nil {
-	
+
 		return
 	}
 	// log.Printf("Bounds ", img.Bounds(), "window rects", w.Rect)
