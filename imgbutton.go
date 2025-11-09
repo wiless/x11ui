@@ -64,7 +64,14 @@ func (i *ImgButton) SetPicture(fname string) {
 }
 
 func (t *ImgButton) DrawImage(img image.Image) {
+	t.DrawImageEx(img, false)
+}
 
+func (t *ImgButton) DrawImageEx(img image.Image, eraseBg bool) {
+
+	if eraseBg {
+		t.drawBackground()
+	}
 	// rgb := image.NewRGBA(img.Bounds())
 	rgb := t.canvas
 	// print the bounds
@@ -162,10 +169,8 @@ func (t *ImgButton) addPicture() {
 
 	inset := irect.Inset(2)
 
-
 	mx := min(inset.Dx(), inset.Dy())
 	simg := xgraphics.Scale(img, mx, mx)
-
 
 	// si := t.canvas.SubImage(inset).(*xgraphics.Image)
 	// xg := xgraphics.NewConvert(t.xu, )
