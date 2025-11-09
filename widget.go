@@ -275,8 +275,7 @@ func (w *Widget) setupCanvas() {
 
 	w.canvas = xgraphics.NewConvert(w.xu, w.rawimg) // (w.xu, r.ImageRect())
 	each := func(x, y int) xgraphics.BGRA {
-		// log.Println(x, y, LightGray)
-		return xgraphics.BGRA{0, 0, 0, 255}
+		return xgraphics.BGRA{0, 0, 0, 0} // Transparent black
 	}
 	w.canvas.For(each)
 	w.bgimage = xgraphics.NewConvert(w.xu, w.rawimg)
