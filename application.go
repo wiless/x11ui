@@ -128,6 +128,7 @@ func NewApplication(title string, width, height int, resizeable, fullApplication
 	s.title = title
 	s.Debug = true
 	s.defW, s.defH = width, height
+	s.l = LayoutHor
 	var err error
 	s.xu, err = xgbutil.NewConn()
 	if err != nil {
@@ -147,6 +148,7 @@ func NewApplication(title string, width, height int, resizeable, fullApplication
 
 	s.keycallbacks = s.keybHandler
 	xevent.KeyPressFun(s.keybHandler).Connect(s.xu, s.AppWin().Id)
+	s.appWin.keybFn = s.handleKey
 
 	// var mkey xgbutil.KeyKey
 
@@ -186,9 +188,20 @@ func (s *Application) mouseReleaseHandler(X *xgbutil.XUtil, e xevent.ButtonRelea
 }
 
 // keybHandler processes keyboard press events for the application.
+func (s *Application) handleKey(key string) {
+	if fn, ok := s.KeyMaps[key]; ok {
+		if s.Debug {
+
+		}
+		fn()
+	} else {
+		log.Printf("Caught Key : %s", key)
+	}
+}
+
+// keybHandler processes keyboard press events for the application.
 func (s *Application) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	if s.xu != X {
-
 		return
 	}
 	modStr := keybind.ModifierString(e.State)
@@ -200,18 +213,7 @@ func (s *Application) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 	if modStr != "" {
 		finalstr = fmt.Sprint(modStr, keyStr)
 	}
-	// log.Println("Event code is ", e.Detail)
-	// log.Printf("%s MAPS  to Keycode %v ", finalstr, keybind.StrToKeycodes(s.xu, finalstr))
-
-	if fn, ok := s.KeyMaps[finalstr]; ok {
-		if s.Debug {
-
-		}
-		fn()
-	} else {
-		log.Printf("Caught Key : %s", finalstr)
-	}
-
+	s.handleKey(finalstr)
 }
 
 // RegisterGlobalKey registers a key to be handled globally by the application.
@@ -299,6 +301,7 @@ func (s *Application) defaultWindow() {
 	w, h = s.defW, s.defH
 
 	s.appWin.Create(s.xu.RootWin(), 0, 0, w, h, xproto.CwBackPixel, 0x000000)
+	s.appWin.Rect = Rect{0, 0, w, h}
 	s.appWin.prevRect = s.appWin.Rect
 	ewmh.WmAllowedActionsSet(s.xu, s.appWin.Id, []string{
 		"_NET_WM_ACTION_MOVE",
@@ -462,13 +465,11 @@ func (s *Application) Restore() {
 func (s *Application) Hide() {
 	// _NET_WM_STATE_HIDDEN
 
-
 	// Get the _NET_WM_STATE_HIDDEN atom.
 	_, err := ewmh.WmStateGet(s.xu, s.appWin.Id)
 	if err != nil {
 		panic(err)
 	}
-
 
 	ewmh.WmNameSet(s.xu, s.appWin.Id, "Minimize Example")
 
@@ -548,7 +549,7 @@ func (s *Application) newWindow(p xproto.Window, r Rect) *Window {
 	}
 
 	win, err := xwindow.Generate(s.xu)
-	win.Create(parent, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0xfffff)
+	win.Create(parent, r.X, r.Y, r.Width, r.Height, xproto.CwBackPixel, 0x000000)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -609,10 +610,11 @@ func (a *Application) NewContainer(layout LayoutDirection, dims ...int) *Contain
 		hspacing:        a.hspacing, // Default spacing
 		vspacing:        a.vspacing,
 
-		pvsChildRect: tempWindow.Rect, // Use the Rect from the temporary window
+		pvsChildRect:    tempWindow.Rect, // Use the Rect from the temporary window
+		defaultFontSize: 12.0,            // Initialize default font size
 	}
 
-	container.SetBGcolor(color.RGBA{125, 125, 0, 0}) // Fully transparent black
+	container.SetBGcolor(color.RGBA{0, 0, 0, 0}) // Fully transparent black
 
 	container.OnResizeComplete(func(w, h int) {
 		container.RelayoutChildren()
@@ -689,9 +691,6 @@ func (a *Application) NewChildWindow(title string, dims ...int) *Window {
 	a.pvsChildRect = r
 
 	// w.SetBackGround(colorful.LinearRgb(0, 0, 0))
-	w.bgcolor = color.RGBA{0, 0, 0, 255}
-	w.drawView(StateNormal)
-	w.finishPaint(w.ximg)
 	// w.SetTitle(title)
 	w.Detach()
 	return w
