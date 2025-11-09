@@ -93,6 +93,7 @@ func (w *Widget) Context() *draw2dimg.GraphicContext {
 
 func (w *Widget) SetBackground(c color.Color) {
 	w.bgColor = c
+	w.Paint()
 }
 
 func (w *Widget) SetFontSize(fsize float64) {
@@ -352,7 +353,7 @@ func (w *Widget) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 
 }
 
-func (w *Widget) mouseClick(X *xgbutil.XUtil, e xevent.ButtonPressEvent) {
+func (w *Widget) mouseClick(X *xgbutil.XUtil, e xevent.ButtonReleaseEvent) {
 	if w.HandlerFunctions.ClkFn == nil {
 
 	} else {
@@ -374,7 +375,7 @@ func (w *Widget) AttachHandlers() *Widget {
 
 	xevent.LeaveNotifyFun(w.onLeaveEvent).Connect(w.xu, w.xwin.Id)
 
-	mousebind.ButtonPressFun(w.mouseClick).Connect(w.xu, w.xwin.Id, "1", false, true)
+	mousebind.ButtonReleaseFun(w.mouseClick).Connect(w.xu, w.xwin.Id, "1", false, true)
 	xevent.KeyPressFun(w.keybHandler).Connect(w.xu, w.xwin.Id)
 	return w
 }
