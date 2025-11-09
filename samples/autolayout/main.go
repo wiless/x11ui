@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/wiless/x11ui"
+	"strconv"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	// Add buttons to the vertical container
 	for i := 0; i < 5; i++ {
 		btn := vcontainer.AddButton("Button")
-		btn.SetLabel("Vertical " + string(i+'0'))
+		btn.SetLabel("Vertical " + strconv.Itoa(i))
 	}
 
 	// Create a horizontal container
@@ -30,7 +31,7 @@ func main() {
 	// Add buttons to the horizontal container
 	for i := 0; i < 3; i++ {
 		btn := hcontainer.AddButton("Button")
-		btn.SetLabel("Horizontal " + string(i+'0'))
+		btn.SetLabel("Horizontal " + strconv.Itoa(i))
 	}
 
 	win.Show()
