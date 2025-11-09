@@ -25,6 +25,7 @@ type ImgButton struct {
 	cursor       float64
 	line         float64
 	fname        string
+	imageAlign   Alignment // New field for image alignment
 }
 
 func NewImgButton(title string, p *Window, dims ...int) *ImgButton {
@@ -56,6 +57,11 @@ func (t *ImgButton) registerHandlers() {
 	// xevent.KeyPressFun(t.keybHandler).Connect(t.xu, t.xwin.Id)
 }
 
+func (t *ImgButton) SetImageAlign(alignment Alignment) {
+	t.imageAlign = alignment
+	t.updateCanvas()
+}
+
 func (i *ImgButton) SetPicture(fname string) {
 	i.fname = fname
 	i.addPicture()
@@ -72,25 +78,50 @@ func (t *ImgButton) DrawImageEx(img image.Image, eraseBg bool) {
 	if eraseBg {
 		t.drawBackground()
 	}
-	// rgb := image.NewRGBA(img.Bounds())
 	rgb := t.canvas
-	// print the bounds
 
-	draw.Draw(rgb, rgb.Bounds().Bounds(), img, image.Point{0, 0}, draw.Src)
+	// Calculate image position based on alignment
+	imgWidth := img.Bounds().Dx()
+	imgHeight := img.Bounds().Dy()
+	btnWidth := t.Width()
+	btnHeight := t.Height()
 
-	// t.canvas.For(func(x, y int) xgraphics.BGRA {
-	// 	// c := t.rawimg.At(x, y).(color.RGBA)
-	// 	c := rgb.At(x, y)
-	// 	r, g, b, a := c.RGBA()
+	var offsetX, offsetY int
 
-	// 	// fmt.Printf("Color at %d, %d is %v\n", x, y, c)
+	switch t.imageAlign {
+	case AlignTopLeft:
+		offsetX = 0
+		offsetY = 0
+	case AlignTopCenter:
+		offsetX = (btnWidth - imgWidth) / 2
+		offsetY = 0
+	case AlignTopRight:
+		offsetX = btnWidth - imgWidth
+		offsetY = 0
+	case AlignMiddleLeft:
+		offsetX = 0
+		offsetY = (btnHeight - imgHeight) / 2
+	case AlignCenter:
+		offsetX = (btnWidth - imgWidth) / 2
+		offsetY = (btnHeight - imgHeight) / 2
+	case AlignMiddleRight:
+		offsetX = btnWidth - imgWidth
+		offsetY = (btnHeight - imgHeight) / 2
+	case AlignBottomLeft:
+		offsetX = 0
+		offsetY = btnHeight - imgHeight
+	case AlignBottomCenter:
+		offsetX = (btnWidth - imgWidth) / 2
+		offsetY = btnHeight - imgHeight
+	case AlignBottomRight:
+		offsetX = btnWidth - imgWidth
+		offsetY = btnHeight - imgHeight
+	default: // Default to top-left if no alignment or unknown alignment
+		offsetX = 0
+		offsetY = 0
+	}
 
-	// 	rgb := xgraphics.BGRA{uint8(b), uint8(g), uint8(r), uint8(a)}
-	// 	return rgb
-	// })
-
-	// ximg := xgraphics.NewConvert(X, img)
-	// t.canvas = xgraphics.NewConvert(t.xu, img)
+	draw.Draw(rgb, rgb.Bounds().Bounds(), img, image.Point{-offsetX, -offsetY}, draw.Src)
 
 	t.canvas.XDraw()
 	t.canvas.XPaint(t.xwin.Id)
