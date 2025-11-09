@@ -121,9 +121,9 @@ func (t *TextBox) keybHandler(X *xgbutil.XUtil, e xevent.KeyPressEvent) {
 
 }
 
-func (t *TextBox) SetFontSize(size int) *TextBox {
+func (t *TextBox) SetFontSize(size float64) *TextBox {
 	t.fsize = size
-	t.gc.SetFontSize(float64(t.fsize))
+	t.gc.SetFontSize(t.fsize)
 
 	t.SetText(t.title)
 	return t
