@@ -159,13 +159,19 @@ func (w *Window) Click() {
 // OnClick sets a simple click handler for the window.
 func (w *Window) OnClick(fn func()) {
 	w.clk = fn
-
+	if w.widget != nil {
+		w.widget.ClkFn = fn
+	}
 }
 
 // OnClickAdv sets an advanced click handler that receives the window and click coordinates.
 func (w *Window) OnClickAdv(fn OnClickFn) {
 	w.clkAdv = fn
-
+	if w.widget != nil {
+		w.widget.ClkAdvFn = func(widget *Widget, x, y int) {
+			fn(w, x, y)
+		}
+	}
 }
 
 func (w *Window) Show() {
@@ -1023,19 +1029,16 @@ func (w Window) RawImage() *image.RGBA {
 
 // UpdatePlot updates the window content from an image.
 func (w *Window) UpdatePlot(img image.Image) {
-
-	// log.Printf("Bounds ", img.Bounds(), "window rects", w.Rect)
-	// ox, oy := w.Rect.X, w.Rect.Y
+	if w.ximg == nil {
+		w.PaintOnce()
+	}
 	rr := w.ImageRect()
+	ximg := xgraphics.NewConvert(w.X(), xgraphics.Scale(img, rr.Dx(), rr.Dy()))
 
-	xgraphics.Blend(w.ximg, w.rawimage, image.Point{0, 0})
-	// ximg = xgraphics.NewConvert(w.X(), xgraphics.Scale(img, rr.Dx(), rr.Dy()))
-
-	w.ximg.XSurfaceSet(w.Id)
-
-	w.ximg.XPaintRects(w.Id, image.Rect(0, 0, rr.Dx(), rr.Dy()))
-	w.ximg.XDraw()
-
+	ximg.XSurfaceSet(w.Id)
+	ximg.XPaintRects(w.Id, rr)
+	ximg.XDraw()
+	w.ximg = ximg
 }
 
 // ReDrawImage redraws the window from its raw image buffer.
