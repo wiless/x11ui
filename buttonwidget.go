@@ -48,6 +48,11 @@ func NewButtonWidget(title string, p *Window, dims ...int) *ButtonWidget {
 	return bw
 }
 
+// SetTitle sets the title of the button. This will update the visible label.
+func (bw *ButtonWidget) SetTitle(title string) {
+	bw.SetLabel(title)
+}
+
 // SetLabel sets the text displayed on the button.
 func (bw *ButtonWidget) Paint() {
 	bw.updateButtonAppearance()
@@ -82,9 +87,21 @@ func (bw *ButtonWidget) SetChecked(checked bool) {
 	}
 }
 
+// SetFontSize sets the font size of the button's text.
+func (bw *ButtonWidget) SetFontSize(size float64) {
+	bw.fsize = size
+	bw.gc.SetFontSize(bw.fsize) // Update the graphics context as well
+	bw.updateButtonAppearance()
+}
+
+// SetKeybFn sets the function to be called when a keyboard event is received.
+func (bw *ButtonWidget) SetKeybFn(fn func(key string)) {
+	bw.KeybFn = fn
+}
+
 func (bw *ButtonWidget) init() {
 	bw.LoadTheme("") // Load default theme colors
-	bw.gc.SetFontSize(bw.fsize)
+	bw.gc.SetFontSize(float64(bw.fsize))
 	bw.updateButtonAppearance() // Initial draw
 	bw.LeaveFn = bw.handleLeave
 	bw.HoverFn = bw.handleHover
@@ -110,6 +127,9 @@ func (bw *ButtonWidget) handleLeave() {
 }
 
 func (bw *ButtonWidget) handleButtonClick() {
+	if bw.isToggle {
+		bw.checked = !bw.checked
+	}
 	// Briefly show pressed state
 	bw.Widget.state = StatePressed
 	bw.updateButtonAppearance()
@@ -117,8 +137,6 @@ func (bw *ButtonWidget) handleButtonClick() {
 	if bw.onClickFn != nil {
 		bw.onClickFn()
 	}
-
-
 }
 
 func (bw *ButtonWidget) handleButtonRelease(X *xgbutil.XUtil, e xevent.ButtonReleaseEvent) {
@@ -131,14 +149,35 @@ func (bw *ButtonWidget) handleButtonRelease(X *xgbutil.XUtil, e xevent.ButtonRel
 }
 
 func (bw *ButtonWidget) updateButtonAppearance() {
-	// Dynamically recalculate colors based on the current theme each time the button is drawn
-	baseColor := toColorful(CurrentTheme.BarColor)
-	bw.normalColor = CurrentTheme.BarColor
-	bw.hoverColor = baseColor.BlendLuvLCh(colorful.Color{R: 1, G: 1, B: 1}, 0.2).Clamped()
-	bw.pressColor = baseColor.BlendLuvLCh(colorful.Color{R: 0, G: 0, B: 0}, 0.4).Clamped()
+	var baseColor colorful.Color
+	var currentLineColor color.Color
+
+	// A toggle button only looks different when it's checked.
+	// Otherwise, it behaves like a normal button.
+	if bw.isToggle && bw.checked {
+		baseColor = toColorful(CurrentTheme.CheckboxCheckedColor)
+		currentLineColor = CurrentTheme.CheckboxBorderColor
+	} else {
+		baseColor = toColorful(CurrentTheme.BarColor)
+		currentLineColor = CurrentTheme.LineColor
+	}
+
+	var currentBgColor color.Color
+	switch bw.Widget.state {
+	case StateHovered:
+		// Make the color 20% darker for hover
+		h, s, l := baseColor.Hsl()
+		currentBgColor = colorful.Hsl(h, s, l*0.8).Clamped()
+	case StatePressed:
+		// Make the color 50% darker for press
+		h, s, l := baseColor.Hsl()
+		currentBgColor = colorful.Hsl(h, s, l*0.5).Clamped()
+	default:
+		currentBgColor = baseColor
+	}
 
 	// Dynamically determine text color based on background luminance
-	rVal, gVal, bVal, _ := baseColor.RGBA()
+	rVal, gVal, bVal, _ := toColorful(currentBgColor).RGBA()
 	avg := (float64(rVal>>8) + float64(gVal>>8) + float64(bVal>>8)) / 3.0 / 255.0
 
 	if avg > 0.5 { // If background is light, use dark text
@@ -148,34 +187,6 @@ func (bw *ButtonWidget) updateButtonAppearance() {
 	}
 	bw.txtColor = bw.textColor
 
-	// Determine background color based on state
-	var currentBgColor color.Color
-	var currentLineColor color.Color
-
-	switch bw.Widget.state {
-	case StateNormal:
-		currentBgColor = toRGBA(bw.normalColor)
-		currentLineColor = CurrentTheme.LineColor
-	case StateHovered:
-		currentBgColor = toRGBA(bw.hoverColor)
-		currentLineColor = CurrentTheme.LineColor
-	case StatePressed:
-		currentBgColor = toRGBA(bw.pressColor)
-		currentLineColor = CurrentTheme.LineColor
-	case StateChecked: // For toggle buttons when checked
-		currentBgColor = CurrentTheme.CheckboxCheckedColor // Use theme color for checked state
-		currentLineColor = CurrentTheme.LineColor
-	default:
-		if bw.isToggle && bw.checked {
-			currentBgColor = CurrentTheme.CheckboxCheckedColor
-			currentLineColor = CurrentTheme.LineColor
-		} else {
-			currentBgColor = bw.normalColor
-			currentLineColor = CurrentTheme.LineColor
-		}
-	}
-
-
 	// Set the embedded Widget's colors
 	bw.Widget.bgColor = currentBgColor
 	bw.Widget.lineColor = currentLineColor
@@ -184,10 +195,10 @@ func (bw *ButtonWidget) updateButtonAppearance() {
 	bw.drawBackground()
 
 	// Draw text
-	tw, th := xgraphics.Extents(systemFont, bw.fsize, bw.text)
+	tw, th := xgraphics.Extents(systemFont, float64(bw.fsize), bw.text)
 	xpos, ypos := (bw.Width()-tw)/2, (bw.Height()-th)/2
 
-	bw.canvas.Text(xpos, ypos, bw.textColor, bw.fsize, systemFont, bw.text)
+	bw.canvas.Text(xpos, ypos, bw.textColor, float64(bw.fsize), systemFont, bw.text)
 
 	// Draw border
 	bw.drawBorder(bw.Widget.state) // This will use bw.Widget.bgColor or bw.Widget.lineColor
