@@ -397,7 +397,7 @@ func (w *Window) drawView(s WidgetState) {
 
 	w.rawimage = dest
 	w.ximg = xgraphics.NewConvert(w.X(), dest)
-	w.drawLabel(w.ximg, w.title, nil, margin, margin)
+	// w.drawLabel(w.ximg, w.label, nil, margin, margin)
 }
 
 // drawBackground draws the background of the window based on its state.
